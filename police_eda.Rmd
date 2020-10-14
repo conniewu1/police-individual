@@ -1,0 +1,194 @@
+---
+title: "Police EDA"
+author: Connie Wu
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+```
+
+
+## Load Data
+```{r load-data}
+all <- read.csv("allshootingsdata.csv")
+
+philly <- read.csv("philly_shootings.csv")
+cincinnati <- read.csv("cincinnati_shootings.csv")
+```
+
+## Exploratory Data Analysis 
+
+```{r clean-all}
+all <- all %>% 
+  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "b", "l", "w", "a", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
+
+all <- all %>% 
+  separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
+
+officer_gender <- sapply(str_split(all$OfficerGender, ";"), length)
+officer_race <- sapply(str_split(all$OfficerRace, ";"), length)
+out <- which((officer_gender == officer_race) == FALSE)
+all <- all[-out,]
+
+all <- all %>% 
+  separate_rows(OfficerRace, OfficerGender, sep = ";") %>% 
+  separate_rows(OfficerRace, OfficerGender, sep = ",") 
+
+officer_gender2 <- sapply(str_split(all$OfficerGender, "/"), length)
+officer_race2 <- sapply(str_split(all$OfficerRace, "/"), length)
+out2 <- which((officer_gender2 == officer_race2) == FALSE)
+all <- all[-out2,]
+
+all$OfficerRace <- trimws(all$OfficerRace)
+all$OfficerGender <- trimws(all$OfficerGender)
+all$Fatal <- trimws(all$Fatal)
+
+all <- all %>% 
+  filter(SubjectRace != "U") %>% 
+  filter(OfficerRace != "U") %>% 
+  filter(OfficerRace != "Unknown") %>% 
+  filter(OfficerRace != "NA") %>% 
+  filter(OfficerRace != "") %>% 
+  filter(OfficerRace != "I") %>% 
+  filter(OfficerGender != "U") %>% 
+  filter(OfficerGender != "N") %>% 
+  filter(SubjectGender != "U") %>% 
+  filter(SubjectGender != "N") %>% 
+  filter(Fatal != "U")
+
+all$OfficerRace[all$OfficerRace == "WHITE"] <- "W"
+all$OfficerRace[all$OfficerRace == "BLACK"] <- "B"
+all$OfficerRace[all$OfficerRace == "ASIAN"] <- "A"
+
+all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
+all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
+all$OfficerGender[all$OfficerGender == "Male"] <- "M"
+```
+
+```{r fatal-eda}
+temp <- all %>% 
+  group_by(Fatal) %>% 
+  summarise(count = n())
+
+ggplot(temp, aes(x=Fatal, y=count)) + 
+  geom_bar(stat="identity") + 
+  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
+```
+
+```{r race-eda}
+temp <- all %>% 
+  group_by(Fatal, SubjectRace) %>% 
+  summarise(race_count = n())
+
+ggplot(temp, aes(x=SubjectRace, y=race_count, fill = Fatal)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(x = "Race", y = "Count", title = "Counts for Victim Race by Fatal vs. Non-Fatal in Police Shootings") 
+
+temp2 <- all %>% 
+  group_by(Fatal, OfficerRace) %>% 
+  summarise(race_count = n())
+
+ggplot(temp2, aes(x=OfficerRace, y=race_count, fill = Fatal)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(x = "Race", y = "Count", title = "Counts for Officer Race by Fatal vs. Non-Fatal in Police Shootings") 
+```
+
+```{r gender-eda}
+temp <- all %>% 
+  group_by(Fatal, SubjectGender) %>% 
+  summarise(gender_count = n())
+
+ggplot(temp, aes(x=SubjectGender, y=gender_count, fill = Fatal)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(x = "Gender", y = "Count", title = "Counts for Victim Gender by Fatal vs. Non-Fatal in Police Shootings") 
+
+temp2 <- all %>% 
+  group_by(Fatal, OfficerGender) %>% 
+  summarise(gender_count = n())
+
+ggplot(temp2, aes(x=OfficerGender, y=gender_count, fill = Fatal)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(x = "Gender", y = "Count", title = "Counts for Officer Race by Fatal vs. Non-Fatal in Police Shootings") 
+```
+
+```{r weapon-eda}
+temp <- all %>% 
+  group_by(Fatal, weapon) %>% 
+  summarise(count = n())
+
+ggplot(temp, aes(x=weapon, y=count, fill = Fatal)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(x = "Weapon Type", y = "Count", title = "Counts of Each Weapon Type on Victims by Fatal vs. Non-Fatal in Police Shootings") 
+```
+
+
+```{r clean-cities}
+cinn <- cincinnati %>% 
+  select(RACE, SEX, TYPE) %>% 
+  rename(race = RACE, gender = SEX, fatal = TYPE) %>% 
+  mutate(city = "Cincinnati")
+
+phil <- philly %>% 
+  select(race, sex, fatal) %>% 
+  rename(gender = sex) %>% 
+  mutate(city = "Philadelphia")
+
+comp <- rbind(cinn, phil) 
+
+comp <- comp %>%
+  filter(race != "UNKNOWN") %>% 
+  filter (race != "") %>% 
+  filter(race != "UNK") %>% 
+  filter(gender != "")
+
+comp$race[comp$race == "WHITE"] <- "W"
+comp$race[comp$race == "BLACK"] <- "B"
+comp$race[comp$race == "OTHER"] <- "O"
+comp$race[comp$race == "HISPANIC"] <- "H"
+
+comp$gender[comp$gender == "MALE"] <- "M"
+comp$gender[comp$gender == "FEMALE"] <- "F"
+
+comp$fatal[comp$fatal == "0"] <- "N"
+comp$fatal[comp$fatal == "1"] <- "F"
+comp$fatal[comp$fatal == "NONFATAL"] <- "N"
+comp$fatal[comp$fatal == "FATAL"] <- "F"
+```
+
+```{r fatal-eda}
+temp <- comp %>% 
+  group_by(fatal) %>% 
+  summarise(count = n())
+
+ggplot(temp, aes(x=fatal, y=count)) + 
+  geom_bar(stat="identity") + 
+  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
+```
+```{r race-eda-cities}
+temp <- comp %>% 
+  group_by(fatal, race) %>% 
+  summarise(count = n())
+
+ggplot(temp, aes(x=race, y=count, fill = fatal)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(x = "Race", y = "Count", title = "Counts for Victim Race by Fatal vs. Non-Fatal in All Shootings") 
+```
+
+```{r gender-eda-cities}
+temp <- comp %>% 
+  group_by(fatal, gender) %>% 
+  summarise(count = n())
+
+ggplot(temp, aes(x=gender, y=count, fill = fatal)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(x = "Gender", y = "Count", title = "Counts for Victim Gender by Fatal vs. Non-Fatal in All Shootings") 
+```
+

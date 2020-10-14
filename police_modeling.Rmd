@@ -1,0 +1,72 @@
+---
+title: "Modeling"
+author: "Connie Wu"
+date: "10/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Modeling
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+```
+
+```{r load-data}
+all <- read.csv("allshootingsdata.csv")
+
+philly <- read.csv("philly_shootings.csv")
+cincinnati <- read.csv("cincinnati_shootings.csv")
+```
+
+```{r clean-all}
+all <- all %>% 
+  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "b", "l", "w", "a", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
+
+all <- all %>% 
+  separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
+
+officer_gender <- sapply(str_split(all$OfficerGender, ";"), length)
+officer_race <- sapply(str_split(all$OfficerRace, ";"), length)
+out <- which((officer_gender == officer_race) == FALSE)
+all <- all[-out,]
+
+all <- all %>% 
+  separate_rows(OfficerRace, OfficerGender, sep = ";") %>% 
+  separate_rows(OfficerRace, OfficerGender, sep = ",") 
+
+officer_gender2 <- sapply(str_split(all$OfficerGender, "/"), length)
+officer_race2 <- sapply(str_split(all$OfficerRace, "/"), length)
+out2 <- which((officer_gender2 == officer_race2) == FALSE)
+all <- all[-out2,]
+
+all$OfficerRace <- trimws(all$OfficerRace)
+all$OfficerGender <- trimws(all$OfficerGender)
+all$Fatal <- trimws(all$Fatal)
+
+all <- all %>% 
+  filter(SubjectRace != "U") %>% 
+  filter(OfficerRace != "U") %>% 
+  filter(OfficerRace != "Unknown") %>% 
+  filter(OfficerRace != "NA") %>% 
+  filter(OfficerRace != "") %>% 
+  filter(OfficerRace != "I") %>% 
+  filter(OfficerGender != "U") %>% 
+  filter(OfficerGender != "N") %>% 
+  filter(SubjectGender != "U") %>% 
+  filter(SubjectGender != "N") %>% 
+  filter(Fatal != "U")
+
+all$OfficerRace[all$OfficerRace == "WHITE"] <- "W"
+all$OfficerRace[all$OfficerRace == "BLACK"] <- "B"
+all$OfficerRace[all$OfficerRace == "ASIAN"] <- "A"
+
+all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
+all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
+all$OfficerGender[all$OfficerGender == "Male"] <- "M"
+```
