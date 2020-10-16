@@ -18,15 +18,30 @@ library(tidyverse)
 ```
 
 ```{r load-data}
-all <- read.csv("allshootingsdata.csv")
+# Shootings
+all <- read.csv("data/allshootingsdata.csv")
+all <- all %>% 
+  mutate(id = paste0("C", row_number()))
 
-philly <- read.csv("philly_shootings.csv")
-cincinnati <- read.csv("cincinnati_shootings.csv")
+# Census Predictors
+census <- read.csv("data/2013census.csv")[,-c(8,9)]
+states <- lapply(census$department, function(x) str_extract_all(x,"\\([^()]+\\)")[[1]])
+states <- substring(states, 2, nchar(states)-1)
+census$state <- states
+
+# Gun Law Predictors
+gun_provisions <- read.csv("data/gun_provisions.csv") %>% 
+  filter(year == 2013)
+gun_provisions <- gun_provisions %>% 
+  mutate(total_pr = rowSums(gun_provisions[,3:136]),
+         deesc_train = ifelse(state %in% c("California", "New Mexico", "Texas", "Oklahoma", "South Dakota", "Illinois", "Indiana", "Tennessee", "Washington", "Missouri", "Georgia", "Ohio", "Maryland", "Massachusetts", "Connecticut", "Maine"), 1, 0)) %>% 
+  select(state, total_pr, deesc_train)
+gun_provisions$state <- state.abb[match(gun_provisions$state,state.name)]
 ```
 
 ```{r clean-all}
 all <- all %>% 
-  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "b", "l", "w", "a", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
+  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
 
 all <- all %>% 
   separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")

@@ -11,18 +11,6 @@ output:
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
-## I. Introduction
-
-|        On May 25, 2020, George Floyd was publicly suffocated to death by police officers in Minneapolis, Minnesota. This, along with the murder of Breonna Taylor by Louisville police, incited waves of protests against police brutality across the United States and increased the spread of Black Lives Matter content on social media. The recent boost in attention to the Black Lives Matter movement has once again brought to light the issue of racism in America and its link to police brutality, and more specifically, police use of deadly force. Several studies have already found that race does play a part in who is targeted and killed in police shootings. For example, in a recent VICE News investigation about police shootings, it was found that “Black people were shot more often and at higher rates than people of any other race.” [1] Additionally, Edwards et. al performed a study regarding the effects of age, race-ethnicity, and sex on the risk of being killed by lethal force by law enforcement and similarly found that "Black men are about 2.5 times more likely to be killed by police over the life course than are white men" while "Black women are about 1.4 times more likely to be killed by police than are white women." [2] However, even with these studies and their disturbing conclusions, a poll done by AP-NORC in June 2020 found that still 39% of Americans think that police are not more likely to use lethal force against a black person than a white person. [3] Although this has decreased from an overwhelming 51% in June 2015, there is still a great deal of research that needs to be done in this area to provide more statistical evidence backing the relationship between racism and police use of deadly force. 
-|        As a result, I have decided to build off of VICE News’ study and investigate data on police shootings further to understand the roles that the race of both victim and officer, as well as other factors such as their genders and whether they are carrying a weapon, play in fatal versus non-fatal police shootings. Additionally, to account for the varying locations of the homicides, I will be using data found on Kaggle detailing the gun provisions that are upheld by each state see how gun legislation affects lethal vs. non-lethal shootings. I will also add a predictor indicating whether the state in which the homicide occurred requires de-escalation training for police officers. Finally, I will explore how the ratio of black to white population in each location relates to police use of deadly force. This will allow me to better understand how racism has manifested itself in America’s police system and determine whether current attempts to prevent police use of lethal force are effective or not.
-
-### Data
-|        As a basis for this study, I will be using the same dataset that VICE News used. This dataset contains data on officer-involved shootings from 47 of the largest local police departments in America, and more specifically, “information on 4,117 incidents and 4,400 subjects over seven years.” [1] The predictors that I will use are subject (victim) race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not. I will be filtering out the cases in which fatality is unknown or the subject’s or the officer’s race or gender is unknown from the final dataset. Additionally, there are 265 rows in which there were more than one victims of the shooting; in these cases, I will be separating each of these observations into multiple rows, with each row representing each individual victim and their associated information. I will carry out the same procedure in the cases in which there were more than one officers present at the shooting. Because there can be multiple victims and officers recorded for a shooting event, I will also be filtering out cases in which for a shooting event, the number of observations listed for victim or officer race differs from the number of observations listed for victim or officer gender, since I can not infer the missing values in either of these columns.
-
-|        After cleaning the data, I was left with a total of 3,451 observations. I plotted some visualizations that depict the overall trends of the different predictors that I plan to use to answer my proposed research questions. 	
-
-### Exploratory Data Analysis
-
 ```{r}
 library(ggplot2)
 library(dplyr)
@@ -33,8 +21,6 @@ library(tidyverse)
 ```{r load-data}
 # Shootings
 all <- read.csv("data/allshootingsdata.csv")
-all <- all %>% 
-  mutate(id = paste0("C", row_number()))
 
 # Census Predictors
 census <- read.csv("data/2013census.csv")[,-c(8,9)]
@@ -54,7 +40,15 @@ gun_provisions$state <- state.abb[match(gun_provisions$state,state.name)]
 
 ```{r clean-all}
 all <- all %>% 
-  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
+  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit")) %>% 
+  mutate(other = as.numeric(other), 
+         replica = as.numeric(replica), 
+         knife = as.numeric(knife), 
+         gun = as.numeric(weapon == "gun"), 
+         unarmed = as.numeric(weapon == "unarmed"),
+         unknown_weapon = as.numeric(weapon == "U"),
+         id = paste0("C", row_number())) %>% 
+  select(-weapon)
 
 all <- all %>% 
   separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
@@ -98,6 +92,16 @@ all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
 all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
 all$OfficerGender[all$OfficerGender == "Male"] <- "M"
 ```
+
+## I. Introduction
+
+|        On May 25, 2020, George Floyd was publicly suffocated to death by police officers in Minneapolis, Minnesota. This, along with the murder of Breonna Taylor by Louisville police, incited waves of protests against police brutality across the United States and increased the spread of Black Lives Matter content on social media. The recent boost in attention to the Black Lives Matter movement has once again brought to light the issue of racism in America and its link to police brutality, and more specifically, police use of deadly force. Several studies have already found that race does play a part in who is targeted and killed in police shootings. For example, in a recent VICE News investigation about police shootings, it was found that “Black people were shot more often and at higher rates than people of any other race.” [1] Additionally, Edwards et. al performed a study regarding the effects of age, race-ethnicity, and sex on the risk of being killed by lethal force by law enforcement and similarly found that "Black men are about 2.5 times more likely to be killed by police over the life course than are white men" while "Black women are about 1.4 times more likely to be killed by police than are white women." [2] However, even with these studies and their disturbing conclusions, a poll done by AP-NORC in June 2020 found that still 39% of Americans think that police are not more likely to use lethal force against a black person than a white person. [3] Although this has decreased from an overwhelming 51% in June 2015, there is still a great deal of research that needs to be done in this area to provide more statistical evidence backing the relationship between racism and police use of deadly force. 
+|        As a result, I have decided to build off of VICE News’ study and investigate data on police shootings further to understand the roles that the race of both victim and officer, as well as other factors such as their genders and whether they are carrying a weapon, play in fatal versus non-fatal police shootings. Additionally, to account for the varying locations of the homicides, I will be using data found on Kaggle detailing the gun provisions that are upheld by each state see how gun legislation affects lethal vs. non-lethal shootings. I will also add a predictor indicating whether the state in which the homicide occurred requires de-escalation training for police officers. Finally, I will explore how the ratio of black to white population in each location relates to police use of deadly force. This will allow me to better understand how racism has manifested itself in America’s police system and determine whether current attempts to prevent police use of lethal force are effective or not.
+
+### Data
+|        As a basis for this study, I will be using the same dataset that VICE News used. This dataset contains data on officer-involved shootings from 47 of the largest local police departments in America, and more specifically, “information on 4,117 incidents and 4,400 subjects [(victims)] over seven years.” [1] VICE News provides 34 variables in the dataset, including date, city, subject race, subject gender, office race, officer gender, the type of weapon the subject was carrying, and whether the shooting was fatal or not. Race was broken up into 5 categories: White (non-Hispanic) (represented as W), Black (non-Hispanic) (B), Asian (A), Latino (L), and Unknown (U). Gender was broken up into 3 categories: Male (M), Female (F), and Unknown (U). Additionally, there were cases in which multiple victims and/or multiple officers were present in the shooting. Each of these scenarios was still represented within one row of the dataset, but semi-colons were present in the respective victim and officer columns, separating each individual's information from each other.
+
+### Exploratory Data Analysis
 
 ```{r fatal-eda2}
 temp <- all %>% 
@@ -151,94 +155,29 @@ ggplot(temp2, aes(x=OfficerGender, y=gender_count, fill = Fatal)) +
 
 |        Additionally, it is evident from the graphs above that male is the gender with the highest count in the cases of victims and officers for both fatal and non-fatal shootings.
 
-```{r weapon-eda}
+```{r weapon-eda, eval=F}
 temp <- all %>% 
   group_by(Fatal, weapon) %>% 
   summarise(count = n())
-
 ggplot(temp, aes(x=weapon, y=count, fill = Fatal)) + 
   geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Weapon Type", y = "Count", title = "Counts of Each Weapon Type on Victims by Fatal vs. Non-Fatal in Police Shootings") 
+  labs(x = "Weapon Type", y = "Count", title = "Counts of Each Weapon Type on Victims by Fatal vs. Non-Fatal in Police Shootings")
 ```
 
 |        Finally, we can see that in cases of police shootings, victims have guns the most often in fatal cases and unknown weapons in non-fatal cases, whereas they have gun replicas the least often in both cases.
-
-|        As I mentioned above, in order to draw comparisons between the demographics of those involved in police shootings versus non-police shootings, I will be using data collected by the Police Data Initiative on the shootings in two cities (Philadelphia and Cincinnati). I will only be using data from these two cities because obtaining data on both fatal and non-fatal shooting crime in America is extremely difficult, since non-fatal shootings are “generally lumped-in with other types of assault in national data collections.” [2] The Police Data Initiative also suggests using general shooting data from Rochester, New York. However, after looking into this dataset, I found that it did not specify whether each shooting was fatal or non-fatal. As a result, I have decided to leave Rochester out of my final dataset so that I can primarily focus on identifying trends in victim and officer demographics in the context of fatal versus non-fatal shootings. The main predictors I will use from the Philadelphia and Cincinnati datasets will be race and sex, both of which refer to the victims of the shootings. I will combine these selected variables from the two datasets into one final dataset. Once again, I will be using fatality of the shooting as the response variable. 
-
-```{r clean-cities}
-cinn <- cincinnati %>% 
-  select(RACE, SEX, TYPE) %>% 
-  rename(race = RACE, gender = SEX, fatal = TYPE) %>% 
-  mutate(city = "Cincinnati")
-
-phil <- philly %>% 
-  select(race, sex, fatal) %>% 
-  rename(gender = sex) %>% 
-  mutate(city = "Philadelphia")
-
-comp <- rbind(cinn, phil) 
-
-comp <- comp %>%
-  filter(race != "UNKNOWN") %>% 
-  filter (race != "") %>% 
-  filter(race != "UNK") %>% 
-  filter(gender != "")
-
-comp$race[comp$race == "WHITE"] <- "W"
-comp$race[comp$race == "BLACK"] <- "B"
-comp$race[comp$race == "OTHER"] <- "O"
-comp$race[comp$race == "HISPANIC"] <- "H"
-
-comp$gender[comp$gender == "MALE"] <- "M"
-comp$gender[comp$gender == "FEMALE"] <- "F"
-
-comp$fatal[comp$fatal == "0"] <- "N"
-comp$fatal[comp$fatal == "1"] <- "F"
-comp$fatal[comp$fatal == "NONFATAL"] <- "N"
-comp$fatal[comp$fatal == "FATAL"] <- "F"
-```
-
-```{r fatal-eda1}
-temp <- comp %>% 
-  group_by(fatal) %>% 
-  summarise(count = n())
-
-ggplot(temp, aes(x=fatal, y=count)) + 
-  geom_bar(stat="identity") + 
-  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
-```
-
-|        In this dataset, it is important to keep in mind that again, there is a significantly higher number of non-fatal shooting events than fatal shooting events.
-
-```{r race-eda-cities}
-temp <- comp %>% 
-  group_by(fatal, race) %>% 
-  summarise(count = n())
-
-ggplot(temp, aes(x=race, y=count, fill = fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Race", y = "Count", title = "Counts for Victim Race by Fatal vs. Non-Fatal in All Shootings") 
-```
-
-```{r gender-eda-cities}
-temp <- comp %>% 
-  group_by(fatal, gender) %>% 
-  summarise(count = n())
-
-ggplot(temp, aes(x=gender, y=count, fill = fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Gender", y = "Count", title = "Counts for Victim Gender by Fatal vs. Non-Fatal in All Shootings") 
-```
-
-|        Furthermore, it appears that Black is the race with the highest count and male is the gender with the highest count for victims of all shootings in these two cities, which is similar to what we discovered for the police shooting data. However, it does not seem that this trend in race and gender varies too much between fatal and non-fatal shootings.
 
 ## II. Methods
 
 ### Data Processing 
 
-### Model 
-```{r}
+|        In the VICE dataset, I will be filtering out the cases in which fatality is unknown, or the subject’s or officer’s race or gender is unknown from the final dataset. Additionally, there are 265 rows in which there were more than one victims of the shooting; in these cases, I will be separating each of these observations into multiple rows, with each row representing each individual victim and their associated information. I will carry out the same procedure in the cases in which there were more than one officers present at the shooting. Because there can be multiple victims and officers recorded for a shooting event, I will also be filtering out cases in which for a shooting event, the number of observations listed for victim or officer race differs from the number of observations listed for victim or officer gender, since I can not infer the missing values in either of these columns.
 
+|        After cleaning the data, I was left with a total of 3,451 observations. I plotted some visualizations that depict the overall trends of the different predictors that I plan to use to answer my proposed research questions. 	
+
+### Model 
+The predictors that I will use are subject race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not.
+```{r}
+fuck
 ```
 
 
