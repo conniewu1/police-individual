@@ -54,7 +54,7 @@ gun_provisions$state <- state.abb[match(gun_provisions$state,state.name)]
 
 ```{r clean-all}
 all <- all %>% 
-  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "b", "l", "w", "a", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
+  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
 
 all <- all %>% 
   separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
