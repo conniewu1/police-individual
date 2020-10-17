@@ -107,11 +107,18 @@ all <- all[-which(all$sb == 0 & all$sw == 0 & all$sl == 0 & all$sa == 0),]
 all <- all[-which(all$ob == 0 & all$ow == 0 & all$ol == 0 & all$oa == 0),]
 ```
 
-```{r save-all}
-all <- saveRDS(all, "data/final.rds")
+```{r}
+final_df <- merge(all, census, by.x = "city", by.y = "city_name")
+final_df <- merge(final_df, gun_provisions, by = "state")
+final_df <- 
 ```
 
 
+```{r save-all}
+saveRDS(final_df, "data/final.rds")
+```
+
+### OLD CODE 
 ```{r}
 all <- all %>% 
   separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
