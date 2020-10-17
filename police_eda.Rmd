@@ -26,9 +26,6 @@ library(tidyverse)
 ```
 
 ```{r load-data}
-# Shootings
-all <- read.csv("data/allshootingsdata.csv")
-
 # Census Predictors
 census <- read.csv("data/2013census.csv")[,-c(8,9)]
 states <- lapply(census$department, function(x) str_extract_all(x,"\\([^()]+\\)")[[1]])
@@ -45,18 +42,77 @@ gun_provisions <- gun_provisions %>%
 gun_provisions$state <- state.abb[match(gun_provisions$state,state.name)]
 ```
 
+### Clean all
+
 ```{r clean-all}
+all <- read.csv("data/allshootingsdata.csv")
+
+# Recode subject race
+all$SubjectRace[is.na(all$SubjectRace)] <- "U"
+
+# Recode officer races
+all$OfficerRace <- gsub("H/L", "L", all$OfficerRace)
+all$OfficerRace <- gsub("H", "L", all$OfficerRace)
+all$OfficerRace <- gsub("Unknown|m/m", "U", all$OfficerRace)
+all$OfficerRace <- gsub("WHITE|WLITE", "W", all$OfficerRace)
+all$OfficerRace <- gsub("BLACK", "B", all$OfficerRace)
+all$OfficerRace <- gsub("ASIAN", "A", all$OfficerRace)
+all$OfficerRace <- gsub("Other|AI/AN|NA/W|Multi-Racial", "O", all$OfficerRace)
+all$OfficerRace <- gsub("A/PI ", "A;", all$OfficerRace)
+all$OfficerRace <- gsub("A/PI", "A", all$OfficerRace)
+all$OfficerRace <- gsub(",", ";", all$OfficerRace)
+all$OfficerRace <- gsub(" ", "", all$OfficerRace)
+all$OfficerRace <- gsub("A/W|W/L|W/A", "O", all$OfficerRace)
+all$OfficerRace[all$OfficerRace == ""] <- "U"
+
+# Recode officer genders
+all$OfficerGender <- gsub("MALE", "M", toupper(all$OfficerGender))
+all$OfficerGender <- gsub("FEMALE|FEM", "F", toupper(all$OfficerGender))
+all$OfficerGender <- gsub("UNKNOWN|FALSE", "U", toupper(all$OfficerGender))
+all$OfficerGender <- gsub(",|:", ";", toupper(all$OfficerGender))
+all$OfficerGender <- gsub(" |/", "", toupper(all$OfficerGender))
+
 all <- all %>% 
   select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit")) %>% 
-  mutate(other = as.numeric(other), 
+  mutate(b = as.numeric(b > 0),
+         w = as.numeric(w > 0),
+         l = as.numeric(l > 0),
+         a = as.numeric(a > 0),
+         so =  as.numeric(str_count(all$SubjectRace, "O") > 0),
+         smale = as.numeric(str_count(all$SubjectGender, "M") > 0),
+         sfem = as.numeric(str_count(all$SubjectGender, "F") > 0),
+         ob = as.numeric(str_count(all$OfficerRace, "B") > 0),
+         ow = as.numeric(str_count(all$OfficerRace, "W") > 0),
+         ol = as.numeric(str_count(all$OfficerRace, "L") > 0),
+         oa = as.numeric(str_count(all$OfficerRace, "A") > 0),
+         oo =  as.numeric(str_count(all$OfficerRace, "O") > 0),
+         omale = as.numeric(str_count(all$OfficerGender, "M") > 0),
+         ofem = as.numeric(str_count(all$OfficerGender, "F") > 0),
+         other = as.numeric(other), 
          replica = as.numeric(replica), 
          knife = as.numeric(knife), 
          gun = as.numeric(weapon == "gun"), 
          unarmed = as.numeric(weapon == "unarmed"),
-         unknown_weapon = as.numeric(weapon == "U"),
-         id = paste0("C", row_number())) %>% 
-  select(-weapon)
+         unknown_weapon = as.numeric(weapon == "U")) %>% 
+  select(-c(weapon, SubjectRace, SubjectGender, OfficerRace, OfficerGender))
 
+all <- rename(all, sb = b, sw = w, sl = l, sa = a)
+```
+
+```{r filter-all}
+# Filter out unknown values
+all <- all[-which(all$smale == 0 & all$sfem == 0),]
+all <- all[-which(all$omale == 0 & all$ofem == 0),]
+all <- all[-which(all$sb == 0 & all$sw == 0 & all$sl == 0 & all$sa == 0),]
+all <- all[-which(all$ob == 0 & all$ow == 0 & all$ol == 0 & all$oa == 0),]
+```
+
+```{r save-all}
+all <- saveRDS(all, "data/final.rds")
+```
+
+
+```{r}
 all <- all %>% 
   separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
 
@@ -98,7 +154,9 @@ all$OfficerRace[all$OfficerRace == "ASIAN"] <- "A"
 all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
 all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
 all$OfficerGender[all$OfficerGender == "Male"] <- "M"
+
 ```
+
 
 ```{r split_data}
 single_victims <- all %>% 
