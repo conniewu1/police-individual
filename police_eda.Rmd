@@ -93,8 +93,9 @@ all <- all %>%
          knife = as.numeric(knife), 
          gun = as.numeric(weapon == "gun"), 
          unarmed = as.numeric(weapon == "unarmed"),
-         unknown_weapon = as.numeric(weapon == "U")) %>% 
-  select(-c(weapon, SubjectRace, SubjectGender, OfficerRace, OfficerGender))
+         unknown_weapon = as.numeric(weapon == "U"),
+         fatal = as.numeric(str_count(all$Fatal, "F") > 0)) %>% 
+  select(-c(weapon, SubjectGender, OfficerRace, OfficerGender))
 
 all <- rename(all, sb = b, sw = w, sl = l, sa = a)
 ```
@@ -105,16 +106,19 @@ all <- all[-which(all$smale == 0 & all$sfem == 0),]
 all <- all[-which(all$omale == 0 & all$ofem == 0),]
 all <- all[-which(all$sb == 0 & all$sw == 0 & all$sl == 0 & all$sa == 0),]
 all <- all[-which(all$ob == 0 & all$ow == 0 & all$ol == 0 & all$oa == 0),]
+all <- all[-which(str_count(all$Fatal, "F") == 0 & str_count(all$Fatal, "N") == 0),]
+all <- all %>% 
+  select(-c(Fatal))
 ```
 
-```{r}
+```{r merge-data}
 final_df <- merge(all, census, by.x = "city", by.y = "city_name")
 final_df <- merge(final_df, gun_provisions, by = "state")
-final_df <- 
+final_df <- final_df %>% 
+  select(-c(department, year))
 ```
 
-
-```{r save-all}
+```{r save-final-df}
 saveRDS(final_df, "data/final.rds")
 ```
 

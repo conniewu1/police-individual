@@ -1,7 +1,7 @@
 ---
 title: "Police Shootings and Racism in America"
 author: "Connie Wu"
-date: "10/12/2020"
+date: "10/17/2020"
 output:
   pdf_document:
     latex_engine: xelatex
@@ -19,110 +19,7 @@ library(tidyverse)
 ```
 
 ```{r load-data}
-# Census Predictors
-census <- read.csv("data/2013census.csv")[,-c(8,9)]
-states <- lapply(census$department, function(x) str_extract_all(x,"\\([^()]+\\)")[[1]])
-states <- substring(states, 2, nchar(states)-1)
-census$state <- states
-
-# Gun Law Predictors
-gun_provisions <- read.csv("data/gun_provisions.csv") %>% 
-  filter(year == 2013)
-gun_provisions <- gun_provisions %>% 
-  mutate(total_pr = rowSums(gun_provisions[,3:136]),
-         deesc_train = ifelse(state %in% c("California", "New Mexico", "Texas", "Oklahoma", "South Dakota", "Illinois", "Indiana", "Tennessee", "Washington", "Missouri", "Georgia", "Ohio", "Maryland", "Massachusetts", "Connecticut", "Maine"), 1, 0)) %>% 
-  select(state, total_pr, deesc_train)
-gun_provisions$state <- state.abb[match(gun_provisions$state,state.name)]
-
-# Shootings
-all <- read.csv("data/allshootingsdata.csv")
-```
-
-```{r clean-all}
-# Recode officer races
-all$OfficerRace <- gsub("H/L", "L", all$OfficerRace)
-all$OfficerRace <- gsub("H", "L", all$OfficerRace)
-all$OfficerRace <- gsub("Unknown|m/m", "U", all$OfficerRace)
-all$OfficerRace <- gsub("WHITE|WLITE", "W", all$OfficerRace)
-all$OfficerRace <- gsub("BLACK", "B", all$OfficerRace)
-all$OfficerRace <- gsub("ASIAN", "A", all$OfficerRace)
-all$OfficerRace <- gsub("Other|AI/AN|NA/W|Multi-Racial", "O", all$OfficerRace)
-all$OfficerRace <- gsub("A/PI ", "A;", all$OfficerRace)
-all$OfficerRace <- gsub("A/PI", "A", all$OfficerRace)
-all$OfficerRace <- gsub(",", ";", all$OfficerRace)
-all$OfficerRace <- gsub(" ", "", all$OfficerRace)
-all$OfficerRace <- gsub("A/W|W/L|W/A", "O", all$OfficerRace)
-all$OfficerRace[all$OfficerRace == ""] <- "U"
-
-# Recode officer genders
-all$OfficerGender <- gsub("MALE", "M", toupper(all$OfficerGender))
-all$OfficerGender <- gsub("FEMALE|FEM", "F", toupper(all$OfficerGender))
-all$OfficerGender <- gsub("UNKNOWN|FALSE", "U", toupper(all$OfficerGender))
-all$OfficerGender <- gsub(",|:", ";", toupper(all$OfficerGender))
-all$OfficerGender <- gsub(" |/", "", toupper(all$OfficerGender))
-
-all <- all %>% 
-  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit")) %>% 
-  mutate(b = as.numeric(b > 0),
-         w = as.numeric(w > 0),
-         l = as.numeric(l > 0),
-         a = as.numeric(a > 0),
-         ob = as.numeric(str_count(all$OfficerRace, "B") > 0),
-         ow = as.numeric(str_count(all$OfficerRace, "W") > 0),
-         ol = as.numeric(str_count(all$OfficerRace, "L") > 0),
-         oa = as.numeric(str_count(all$OfficerRace, "A") > 0),
-         other = as.numeric(other), 
-         replica = as.numeric(replica), 
-         knife = as.numeric(knife), 
-         gun = as.numeric(weapon == "gun"), 
-         unarmed = as.numeric(weapon == "unarmed"),
-         unknown_weapon = as.numeric(weapon == "U"),
-         id = paste0("C", row_number())) %>% 
-  select(-c(weapon))
-
-all <- rename(all, sb = b, sl = l, sw = w, sa = a)
-
-all <- all %>% 
-  separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
-
-officer_gender <- sapply(str_split(all$OfficerGender, ";"), length)
-officer_race <- sapply(str_split(all$OfficerRace, ";"), length)
-out <- which((officer_gender == officer_race) == FALSE)
-all <- all[-out,]
-
-all <- all %>% 
-  separate_rows(OfficerRace, OfficerGender, sep = ";") %>% 
-  separate_rows(OfficerRace, OfficerGender, sep = ",") 
-
-officer_gender2 <- sapply(str_split(all$OfficerGender, "/"), length)
-officer_race2 <- sapply(str_split(all$OfficerRace, "/"), length)
-out2 <- which((officer_gender2 == officer_race2) == FALSE)
-all <- all[-out2,]
-
-all$OfficerRace <- trimws(all$OfficerRace)
-all$OfficerGender <- trimws(all$OfficerGender)
-all$Fatal <- trimws(all$Fatal)
-
-all <- all %>% 
-  filter(SubjectRace != "U") %>% 
-  filter(OfficerRace != "U") %>% 
-  filter(OfficerRace != "Unknown") %>% 
-  filter(OfficerRace != "NA") %>% 
-  filter(OfficerRace != "") %>% 
-  filter(OfficerRace != "I") %>% 
-  filter(OfficerGender != "U") %>% 
-  filter(OfficerGender != "N") %>% 
-  filter(SubjectGender != "U") %>% 
-  filter(SubjectGender != "N") %>% 
-  filter(Fatal != "U")
-
-all$OfficerRace[all$OfficerRace == "WHITE"] <- "W"
-all$OfficerRace[all$OfficerRace == "BLACK"] <- "B"
-all$OfficerRace[all$OfficerRace == "ASIAN"] <- "A"
-
-all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
-all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
-all$OfficerGender[all$OfficerGender == "Male"] <- "M"
+final_df <- readRDS("data/final.rds")
 ```
 
 ## I. Introduction
@@ -146,35 +43,25 @@ all$OfficerGender[all$OfficerGender == "Male"] <- "M"
 
 |        Although the VICE News dataset was already relatively clean with regards to the victim's data, there was still quite a bit of cleaning that needed to be done for the race and gender data of the officers. To clean these columns, I replaced all values that were not "W", "B", "A", "O", or "U" in the race column with the most informed guess that I could make about what the values represented. For example, "A/PI" values were taken to represent Asian/Pacific Islander and thus were replaced with "A", and "A/W" or other values with a "/" in them were typically taken to represent multi-racial individuals and as a result were replaced with "O." Similar procedures were carried out in the gender column for officers for values that were not "M", "F", or "U".
 
-|        After this initial cleaning, I created new columns in the same dataset that represented whether any victims of race Black, White, Asian, or Other were present in the crime, respectively, and if any male or female victims were present in the crime, respectively. I also added new columns to represent the same information for officers (for each race and gender, whether each was present). I then made sure that each weapon type had its own column. All of these added columns had values of either 0 or 1, with 0 representing an absence of the variable and 1 a presence. Finally, I filtered out all rows that had only unknown values for the races or genders of the victims or officers, as these rows did not provide sufficient information for my analysis, and I selected only the columns I needed, such as whether the shooting was fatal or not, the genders and races of the victims and officers, and the weapons that the victims were carrying, if any. The cleaned dataset contains a total of 2,084 observations.
+|        After this initial cleaning, I created new columns in the same dataset that represented whether any victims of race Black, White, Asian, or Other were present in the crime, respectively, and if any male or female victims were present in the crime, respectively. I also added new columns to represent the same information for officers (for each race and gender, whether each was present), and a new column to represent whether any victim involved in the shooting was shot fatally. Additionally, I made sure that each weapon type had its own column. All of these added columns had values of either 0 or 1, with 0 representing an absence of the variable and 1 a presence. Finally, I filtered out 2,079 rows that had only unknown values for the fatality of the shooting or the races or genders of the victims or officers, as these rows did not provide sufficient information for my analysis, and I selected only the columns I needed, such as whether any victim of the shooting was shot fatally or not, the genders and races of the victims and officers, and the weapons that the victims were carrying, if any.
 
 |        For the gun provisions dataset, I created a new column that sums up the total number of laws listed in the dataset that each state had in 2013 (for the same reason that VICE News used 2013). Additionally, as I mentioned earlier, I appended a column to this dataset representing whether a state requires de-escalation training for police officers as of November 2017. 2017 was used under the assumption that no major event occurred between September 2016 and November 2017 that caused a sudden increase in the number of states that require de-escalation training for police officers. Finally, for the census data, the only cleaning that needed to be done was extracting the state that each city was in from the department column so that the census could be easily joined with the cleaned shootings dataset by city name, as well as the gun provisions dataset by abbreviated state name.
 
-|        The final dataset consists of  
+|        After merging the three datasets, the final dataset consists of 2,038 observations and 34 columns.
 
 ### Exploratory Data Analysis
 
-```{r}
-single_victims <- all %>% 
+```{r num_rows, eval = F}
+single_victims <- final_df %>% 
   filter(NumberOfSubjects <= 1)
 nrow(single_victims)
 
-mult_victims <- all %>% 
+mult_victims <- final_df %>% 
   filter(NumberOfSubjects > 1)
 nrow(mult_victims)
-
-unknown <- all %>% 
-  filter(str_detect(SubjectRace, "U"))
 ```
-|       Upon first glance, there appears to be 1932 incidents in which there was only one victim, and 152 with multiple victims. This means that there is one incident in which the victim race was marked as "NA." Additionally, 
 
-```{r eval = F}
-single_victims <- all %>% 
-  filter(!str_detect(SubjectRace, ";"))
-
-mult_victims <- all %>% 
-  filter(str_detect(SubjectRace, ";"))
-
+```{r, eval = F}
 ggplot(single_victims, aes(x = Fatal, y = count)) +
   geom_bar(stat="identity") + 
   labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
@@ -182,8 +69,9 @@ ggplot(single_victims, aes(x = Fatal, y = count)) +
   summarise(count = n())
 ```
 
+|       Upon first glance, there appears to be 1,890 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among these, 
 
-```{r fatal-eda2}
+```{r fatal-eda2, eval = F}
 temp <- all %>% 
   group_by(Fatal) %>% 
   summarise(count = n())
@@ -195,7 +83,7 @@ ggplot(temp, aes(x=Fatal, y=count)) +
 
 |        In this dataset, it is important to keep in mind that there is a higher number of non-fatal shooting events than fatal shooting events.
 
-```{r race-eda}
+```{r race-eda, eval = F}
 temp <- all %>% 
   group_by(Fatal, SubjectRace) %>% 
   summarise(race_count = n())
@@ -215,7 +103,7 @@ ggplot(temp2, aes(x=OfficerRace, y=race_count, fill = Fatal)) +
 
 |        In the plots above, we can see the counts for both victim and officer race in the final dataset split by fatal versus non-fatal shootings. In this dataset, A stands for Asian, B stands for Black, H stands for Hispanic, L stands for Latino, O stands for other, and W stands for White. Already, we can see that in both fatal and non-fatal cases, Black is the race with the highest count for the victim category, whereas White is the race with the highest count for the officer category. It is also interesting to note that the number of Black victims is higher in non-fatal cases than in fatal cases, while the number of white victims is higher in fatal cases than in non-fatal cases.
 
-```{r gender-eda}
+```{r gender-eda, eval = F}
 temp <- all %>% 
   group_by(Fatal, SubjectGender) %>% 
   summarise(gender_count = n())
@@ -248,7 +136,7 @@ ggplot(temp, aes(x=weapon, y=count, fill = Fatal)) +
 
 
 ### Model 
-The predictors that I will use are subject race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not.
+|        The predictors that I will use are subject race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not.
 ```{r}
 
 ```
@@ -256,6 +144,7 @@ The predictors that I will use are subject race, subject gender, officer race, o
 
 ## III. Preliminary Results
 
+- limitations: time series, also counting N;U... combos as N even though some are unknown
 ## References 
 1) Vice 
 2) https://www.pnas.org/content/pnas/116/34/16793.full.pdf
