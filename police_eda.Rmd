@@ -118,6 +118,7 @@ final_df <- merge(all, census, by.x = "city", by.y = "city_name")
 final_df <- merge(final_df, gun_provisions, by = "state")
 final_df <- final_df %>% 
   select(-c(department, year))
+final_df$NumberOfSubjects[which(final_df$NumberOfSubjects == 0)] <- 1
 ```
 
 ```{r save-final-df}
@@ -403,73 +404,32 @@ ggsave(filename = "figures/multeda1.png", race_count1)
 ggsave(filename = "figures/multeda2.png", race_prop1)
 ```
 
-```{r}
-temp <- single_victims %>% 
-  group_by(Fatal, SubjectRace) %>% 
-  summarise(count = n())
-  
-ggplot(single_victims, aes(x = Fatal, y = count)) +
-  geom_bar(stat="identity") + 
-  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
-  group_by(Fatal, race) %>% 
-  summarise(count = n())
+```{r fatally shot prop for all shootings of varying numbers of victims}
+temp <- final_eda %>% 
+  group_by(NumberOfSubjects) %>% 
+  summarise(prop = sum(fatal == "Fatal")/n(),
+            total = n())
+temp
 ```
 
-```{r fatal-eda}
-temp <- all %>% 
-  group_by(Fatal) %>% 
-  summarise(count = n())
 
-ggplot(temp, aes(x=Fatal, y=count)) + 
-  geom_bar(stat="identity") + 
-  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
+```{r black to white ratio}
+temp <- final_eda %>% 
+  group_by(city, fatal) %>% 
+  summarise(btw = black/white) %>% 
+  unique
+
+plot <- ggplot(temp, aes(x = btw, y = fatal, fill = fatal)) + 
+    geom_boxplot()  + 
+  labs(x = "Black to White Ratio", y = "Fatal vs. Non-Fatal Shooting", title = "City Black to White Ratio Distributions for Fatal vs. Non-Fatal Police Shootings") +
+  theme(legend.text = element_text(size = 8),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x = element_text(angle = 10, hjust = 1, size = 8),
+        plot.title = element_text(size=10, hjust = 0.5))
+
+ggsave(filename = "figures/btweda.png", plot)
 ```
-
-```{r race-eda}
-temp <- all %>% 
-  group_by(Fatal, SubjectRace) %>% 
-  summarise(race_count = n())
-
-ggplot(temp, aes(x=SubjectRace, y=race_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Race", y = "Count", title = "Counts for Victim Race by Fatal vs. Non-Fatal in Police Shootings") 
-
-temp2 <- all %>% 
-  group_by(Fatal, OfficerRace) %>% 
-  summarise(race_count = n())
-
-ggplot(temp2, aes(x=OfficerRace, y=race_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Race", y = "Count", title = "Counts for Officer Race by Fatal vs. Non-Fatal in Police Shootings") 
-```
-
-```{r gender-eda}
-temp <- all %>% 
-  group_by(Fatal, SubjectGender) %>% 
-  summarise(gender_count = n())
-
-ggplot(temp, aes(x=SubjectGender, y=gender_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Gender", y = "Count", title = "Counts for Victim Gender by Fatal vs. Non-Fatal in Police Shootings") 
-
-temp2 <- all %>% 
-  group_by(Fatal, OfficerGender) %>% 
-  summarise(gender_count = n())
-
-ggplot(temp2, aes(x=OfficerGender, y=gender_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Gender", y = "Count", title = "Counts for Officer Race by Fatal vs. Non-Fatal in Police Shootings") 
-```
-
-```{r weapon-eda}
-temp <- all %>% 
-  group_by(Fatal, weapon) %>% 
-  summarise(count = n())
-
-ggplot(temp, aes(x=weapon, y=count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Weapon Type", y = "Count", title = "Counts of Each Weapon Type on Victims by Fatal vs. Non-Fatal in Police Shootings") 
-```
+Means are not that different, will probably just use percent black and percent white then.
 
 ### OLD CODE 
 ```{r}
