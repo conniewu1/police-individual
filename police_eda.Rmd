@@ -88,7 +88,7 @@ all <- all %>%
          oo =  as.numeric(str_count(all$OfficerRace, "O") > 0),
          omale = as.numeric(str_count(all$OfficerGender, "M") > 0),
          ofem = as.numeric(str_count(all$OfficerGender, "F") > 0),
-         other = as.numeric(other), 
+         weapon_other = as.numeric(other), 
          replica = as.numeric(replica), 
          knife = as.numeric(knife), 
          gun = as.numeric(weapon == "gun"), 
@@ -104,9 +104,9 @@ all <- rename(all, sb = b, sw = w, sl = l, sa = a)
 # Filter out unknown values
 all <- all[-which(all$smale == 0 & all$sfem == 0),]
 all <- all[-which(all$omale == 0 & all$ofem == 0),]
-all <- all[-which(all$sb == 0 & all$sw == 0 & all$sl == 0 & all$sa == 0),]
+all <- all[-which(all$sb == 0 & all$sw == 0 & all$sl == 0 & all$sa == 0 & all$so == 0),]
 all <- all[-which(is.na(all$sb)),]
-all <- all[-which(all$ob == 0 & all$ow == 0 & all$ol == 0 & all$oa == 0),]
+all <- all[-which(all$ob == 0 & all$ow == 0 & all$ol == 0 & all$oa == 0 & all$oo == 0),]
 all <- all[-which(str_count(all$Fatal, "F") == 0 & str_count(all$Fatal, "N") == 0),]
 all <- all %>% 
   select(-c(Fatal))
@@ -179,6 +179,31 @@ mult_victims <- all %>%
 ```
 
 ## Exploratory Data Analysis 
+
+```{r single_victims-race}
+tempsb <- single_victims %>% 
+  group_by(sb, fatal) %>% 
+  summarise(count = n())
+
+ggplot(tempsb, aes(x = sb, y = count, fill = fatal)) +
+  geom_bar(stat="identity") + 
+  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
+
+tempsw <- single_victims %>% 
+  group_by(sw, fatal) %>% 
+  summarise(count = n())
+tempsa <- single_victims %>% 
+  group_by(sa, fatal) %>% 
+  summarise(count = n())
+tempsl <- single_victims %>% 
+  group_by(sl, fatal) %>% 
+  summarise(count = n())
+tempso <- single_victims %>% 
+  group_by(so, fatal) %>% 
+  summarise(count = n())
+
+```
+
 
 ```{r}
 temp <- single_victims %>% 

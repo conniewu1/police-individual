@@ -56,8 +56,47 @@ final_eda <- final_df %>%
   mutate(
       fatal = case_when(
         fatal == 1 ~ "Fatal",
-        fatal == 0 ~ "Non-Fatal"
-    )
+        fatal == 0 ~ "Non-Fatal"),
+      sb = case_when(
+        sb == 1 ~ "Victim Type Present",
+        sb == 0 ~ "Victim Type Not Present"
+      ),
+      sw = case_when(
+        sw == 1 ~ "Victim Type Present",
+        sw == 0 ~ "Victim Type Not Present"
+      ),
+      sl = case_when(
+        sl == 1 ~ "Victim Type Present",
+        sl == 0 ~ "Victim Type Not Present"
+      ),
+      sa = case_when(
+        sa == 1 ~ "Victim Type Present",
+        sa == 0 ~ "Victim Type Not Present"
+      ),
+      so = case_when(
+        so == 1 ~ "Victim Type Present",
+        so == 0 ~ "Victim Type Not Present"
+      ),
+      ob = case_when(
+        ob == 1 ~ "Officer Type Present",
+        ob == 0 ~ "Officer Type Not Present"
+      ),
+      ow = case_when(
+        ow == 1 ~ "Officer Type Present",
+        ow == 0 ~ "Officer Type Not Present"
+      ),
+      ol = case_when(
+        ol == 1 ~ "Officer Type Present",
+        ol == 0 ~ "Officer Type Not Present"
+      ),
+      oa = case_when(
+        oa == 1 ~ "Officer Type Present",
+        oa == 0 ~ "Officer Type Not Present"
+      ),
+      oo = case_when(
+        oo == 1 ~ "Officer Type Present",
+        oo == 0 ~ "Officer Type Not Present"
+      )
   )
 
 single_victims <- final_eda %>% 
@@ -82,8 +121,6 @@ tempsa <- single_victims %>%
 tempsl <- single_victims %>% 
   group_by(sl, fatal) %>% 
   summarise(count = n())
-
-## why are there no others?
 tempso <- single_victims %>% 
   group_by(so, fatal) %>% 
   summarise(count = n())
@@ -95,7 +132,7 @@ ggplot(single_victims, aes(x = fatal, y = count)) +
   summarise(count = n())
 ```
 
-|       Upon first glance, there appears to be 1,883 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among these, 
+|       Upon first glance, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among these, 
 
 ```{r fatal-eda2, eval = F}
 temp <- all %>% 
