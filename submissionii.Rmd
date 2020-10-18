@@ -51,7 +51,7 @@ final_df <- readRDS("data/final.rds")
 
 ### Exploratory Data Analysis
 
-|       Plotted below are the race proportions of shooting victims in the top 4 most popular cities in the dataset (Chicago, Los Angeles, Houston, and Phoenix) vs. the race proportions of those cities' total populations in 2013. Because the bars representing shootings in the Black race category are taller than the bars representing city-wide population in all 4 plots, it is evident Black people are disproportionately the victims of police shootings compared to city race proportions, especially in Chicago and Houston.
+|       Plotted below are the race proportions of shooting victims in the top 4 most popular cities in the dataset (Chicago, Los Angeles, Houston, and Phoenix) vs. the race proportions of those cities' total populations in 2013. Because the bars representing shootings in the Black race category are taller than the bars representing city-wide population in all 4 plots, it is evident Black people are disproportionately the victims of police shootings compared to city race proportions. This can especially be seen in Houston, where Black people make up less than 25% of the city population, yet more than 50% of the victims of police shootings in Houston.
 
 ```{r, figures-city, fig.show="hold", out.width="30%", fig.cap="Race Proportions of Shooting Victims vs. City Population Demographics of the Most Popular 4 Cities in the Data "}
 knitr::include_graphics("figures/cityeda1.png")
@@ -78,70 +78,7 @@ knitr::include_graphics("figures/singleeda1.png")
 knitr::include_graphics("figures/singleeda2.png")
 ```
 
-|       There appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among all shootings with only one victim, it appears that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal.
-
-```{r fatal-eda2, eval = F}
-temp <- all %>% 
-  group_by(Fatal) %>% 
-  summarise(count = n())
-
-ggplot(temp, aes(x=Fatal, y=count)) + 
-  geom_bar(stat="identity") + 
-  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
-```
-
-|        In this dataset, it is important to keep in mind that there is a higher number of non-fatal shooting events than fatal shooting events.
-
-```{r race-eda, eval = F}
-temp <- all %>% 
-  group_by(Fatal, SubjectRace) %>% 
-  summarise(race_count = n())
-
-ggplot(temp, aes(x=SubjectRace, y=race_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Race", y = "Count", title = "Counts for Victim Race by Fatal vs. Non-Fatal in Police Shootings") 
-
-temp2 <- all %>% 
-  group_by(Fatal, OfficerRace) %>% 
-  summarise(race_count = n())
-
-ggplot(temp2, aes(x=OfficerRace, y=race_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Race", y = "Count", title = "Counts for Officer Race by Fatal vs. Non-Fatal in Police Shootings") 
-```
-
-|        In the plots above, we can see the counts for both victim and officer race in the final dataset split by fatal versus non-fatal shootings. In this dataset, A stands for Asian, B stands for Black, H stands for Hispanic, L stands for Latino, O stands for other, and W stands for White. Already, we can see that in both fatal and non-fatal cases, Black is the race with the highest count for the victim category, whereas White is the race with the highest count for the officer category. It is also interesting to note that the number of Black victims is higher in non-fatal cases than in fatal cases, while the number of white victims is higher in fatal cases than in non-fatal cases.
-
-```{r gender-eda, eval = F}
-temp <- all %>% 
-  group_by(Fatal, SubjectGender) %>% 
-  summarise(gender_count = n())
-
-ggplot(temp, aes(x=SubjectGender, y=gender_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Gender", y = "Count", title = "Counts for Victim Gender by Fatal vs. Non-Fatal in Police Shootings") 
-
-temp2 <- all %>% 
-  group_by(Fatal, OfficerGender) %>% 
-  summarise(gender_count = n())
-
-ggplot(temp2, aes(x=OfficerGender, y=gender_count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Gender", y = "Count", title = "Counts for Officer Race by Fatal vs. Non-Fatal in Police Shootings") 
-```
-
-|        Additionally, it is evident from the graphs above that male is the gender with the highest count in the cases of victims and officers for both fatal and non-fatal shootings.
-
-```{r weapon-eda, eval=F}
-temp <- all %>% 
-  group_by(Fatal, weapon) %>% 
-  summarise(count = n())
-ggplot(temp, aes(x=weapon, y=count, fill = Fatal)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  labs(x = "Weapon Type", y = "Count", title = "Counts of Each Weapon Type on Victims by Fatal vs. Non-Fatal in Police Shootings")
-```
-
-|        Finally, we can see that in cases of police shootings, victims have guns the most often in fatal cases and unknown weapons in non-fatal cases, whereas they have gun replicas the least often in both cases.
+|       Additionally, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among all shootings with only one victim, it appears that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal.
 
 
 ### Model 
