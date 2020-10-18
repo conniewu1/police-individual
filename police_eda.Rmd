@@ -88,16 +88,16 @@ all <- all %>%
          oo =  as.numeric(str_count(all$OfficerRace, "O") > 0),
          omale = as.numeric(str_count(all$OfficerGender, "M") > 0),
          ofem = as.numeric(str_count(all$OfficerGender, "F") > 0),
-         weapon_other = as.numeric(other), 
+         other = as.numeric(other), 
          replica = as.numeric(replica), 
          knife = as.numeric(knife), 
          gun = as.numeric(weapon == "gun"), 
          unarmed = as.numeric(weapon == "unarmed"),
          unknown_weapon = as.numeric(weapon == "U"),
          fatal = as.numeric(str_count(all$Fatal, "F") > 0)) %>% 
-  select(-c(weapon, SubjectGender, OfficerRace, OfficerGender))
+  select(-c(weapon, SubjectGender, OfficerGender))
 
-all <- rename(all, sb = b, sw = w, sl = l, sa = a)
+all <- rename(all, sb = b, sw = w, sl = l, sa = a, weapon_other = other)
 ```
 
 ```{r filter-all}
@@ -123,87 +123,257 @@ final_df <- final_df %>%
 saveRDS(final_df, "data/final.rds")
 ```
 
-### OLD CODE 
-```{r}
-all <- all %>% 
-  separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
-
-officer_gender <- sapply(str_split(all$OfficerGender, ";"), length)
-officer_race <- sapply(str_split(all$OfficerRace, ";"), length)
-out <- which((officer_gender == officer_race) == FALSE)
-all <- all[-out,]
-
-all <- all %>% 
-  separate_rows(OfficerRace, OfficerGender, sep = ";") %>% 
-  separate_rows(OfficerRace, OfficerGender, sep = ",") 
-
-officer_gender2 <- sapply(str_split(all$OfficerGender, "/"), length)
-officer_race2 <- sapply(str_split(all$OfficerRace, "/"), length)
-out2 <- which((officer_gender2 == officer_race2) == FALSE)
-all <- all[-out2,]
-
-all$OfficerRace <- trimws(all$OfficerRace)
-all$OfficerGender <- trimws(all$OfficerGender)
-all$Fatal <- trimws(all$Fatal)
-
-all <- all %>% 
-  filter(SubjectRace != "U") %>% 
-  filter(OfficerRace != "U") %>% 
-  filter(OfficerRace != "Unknown") %>% 
-  filter(OfficerRace != "NA") %>% 
-  filter(OfficerRace != "") %>% 
-  filter(OfficerRace != "I") %>% 
-  filter(OfficerGender != "U") %>% 
-  filter(OfficerGender != "N") %>% 
-  filter(SubjectGender != "U") %>% 
-  filter(SubjectGender != "N") %>% 
-  filter(Fatal != "U")
-
-all$OfficerRace[all$OfficerRace == "WHITE"] <- "W"
-all$OfficerRace[all$OfficerRace == "BLACK"] <- "B"
-all$OfficerRace[all$OfficerRace == "ASIAN"] <- "A"
-
-all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
-all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
-all$OfficerGender[all$OfficerGender == "Male"] <- "M"
-
-```
-
-
-```{r split_data}
-single_victims <- all %>% 
-  filter(!str_detect(SubjectRace, ";"))
-
-mult_victims <- all %>% 
-  filter(str_detect(SubjectRace, ";"))
-```
-
 ## Exploratory Data Analysis 
 
-```{r single_victims-race}
+```{r rename 0 and 1 values}
+final_eda <- final_df %>%
+  mutate(
+      fatal = case_when(
+        fatal == 1 ~ "Fatal",
+        fatal == 0 ~ "Non-Fatal"),
+      sb = case_when(
+        sb == 1 ~ "Black Victim Present",
+        sb == 0 ~ "Black Victim Not Present"
+      ),
+      sw = case_when(
+        sw == 1 ~ "White Victim Present",
+        sw == 0 ~ "White Victim Not Present"
+      ),
+      sl = case_when(
+        sl == 1 ~ "Latino Victim Present",
+        sl == 0 ~ "Latino Victim Not Present"
+      ),
+      sa = case_when(
+        sa == 1 ~ "Asian Victim Present",
+        sa == 0 ~ "Asian Victim Not Present"
+      ),
+      so = case_when(
+        so == 1 ~ "Other Victim Present",
+        so == 0 ~ "Other Victim Not Present"
+      ),
+      smale = case_when(
+        smale == 1 ~ "Male Victim Present",
+        smale == 0 ~ "Male Victim Not Present"
+      ),
+      sfem = case_when(
+        sfem == 1 ~ "Female Victim Present",
+        sfem == 0 ~ "Female Victim Not Present"
+      ),
+      ob = case_when(
+        ob == 1 ~ "Black Officer Present",
+        ob == 0 ~ "Black Officer Not Present"
+      ),
+      ow = case_when(
+        ow == 1 ~ "White Officer Present",
+        ow == 0 ~ "White Officer Not Present"
+      ),
+      ol = case_when(
+        ol == 1 ~ "Latino Officer Present",
+        ol == 0 ~ "Latino Officer Not Present"
+      ),
+      oa = case_when(
+        oa == 1 ~ "Asian Officer Present",
+        oa == 0 ~ "Asian Officer Not Present"
+      ),
+      oo = case_when(
+        oo == 1 ~ "Other Officer Present",
+        oo == 0 ~ "Other Officer Not Present"
+      ),
+      omale = case_when(
+        omale == 1 ~ "Male Officer Present",
+        omale == 0 ~ "Male Officer Not Present"
+      ),
+      weapon_other = case_when(
+        weapon_other == 1 ~ "Other Weapon Present",
+        weapon_other == 0 ~ "Other Weapon Not Present"
+      ), 
+      replica = case_when(
+        replica == 1 ~ "Replica Present",
+        replica == 0 ~ "Replica Not Present"
+      ),
+      knife = case_when(
+        knife == 1 ~ "Knife Present",
+        knife == 0 ~ "Knife Not Present"
+      ),
+      gun = case_when(
+        gun == 1 ~ "Gun Present",
+        gun == 0 ~ "Gun Not Present"
+      ),
+      unarmed = case_when(
+        unarmed == 1 ~ "Victim Unarmed",
+        unarmed == 0 ~ "Victim Armed"
+      ),
+      unknown_weapon = case_when(
+        unknown_weapon == 1 ~ "Weapon Unknown",
+        unknown_weapon == 0 ~ "Weapon Known"
+      )
+  )
+
+saveRDS(final_eda, 'data/final_eda.rds')
+```
+
+```{r race shootings vs population demographics}
+most_pop <- tail(names(sort(table(final_eda$city))), 6)
+
+for (c in most_pop) {
+  temp <- final_eda %>% 
+    filter(city == c)
+  
+  vic <- temp %>% 
+  summarise(total_b = sum(str_count(SubjectRace, "B")), 
+            total_w = sum(str_count(SubjectRace, "W")),
+            total_l = sum(str_count(SubjectRace, "L")),
+            total_a = sum(str_count(SubjectRace, "A")),
+            total_o = sum(str_count(SubjectRace, "O")))
+  
+  vic <- vic %>%
+    t() %>%
+    as.data.frame(stringsAsFactors = F) %>%
+    rownames_to_column("value") %>%
+    `rownames<-`(NULL)
+
+  demo <- 
+
+}
+
+vic <- final_eda %>% 
+  summarise(total_b = sum(str_count(SubjectRace, "B")), 
+            total_w = sum(str_count(SubjectRace, "W")),
+            total_l = sum(str_count(SubjectRace, "L")),
+            total_a = sum(str_count(SubjectRace, "A")),
+            total_o = sum(str_count(SubjectRace, "O")))
+vic <- vic %>%
+  t() %>%
+  as.data.frame(stringsAsFactors = F) %>%
+  rownames_to_column("value") %>%
+  `rownames<-`(NULL)
+
+pop <- final_eda %>% 
+  summarise(total_b = sum())
+```
+
+```{r split into single vs mult}
+single_victims <- final_eda %>% 
+  filter(NumberOfSubjects <= 1)
+nrow(single_victims)
+
+mult_victims <- final_eda %>% 
+  filter(NumberOfSubjects > 1)
+nrow(mult_victims)
+```
+
+```{r single victims race counts and props}
 tempsb <- single_victims %>% 
   group_by(sb, fatal) %>% 
   summarise(count = n())
-
-ggplot(tempsb, aes(x = sb, y = count, fill = fatal)) +
-  geom_bar(stat="identity") + 
-  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
+tempsb <- tempsb[3:4,]
+tempsb <- rename(tempsb, type = sb)
 
 tempsw <- single_victims %>% 
   group_by(sw, fatal) %>% 
   summarise(count = n())
+tempsw <- tempsw[3:4,]
+tempsw <- rename(tempsw, type = sw)
+
 tempsa <- single_victims %>% 
   group_by(sa, fatal) %>% 
   summarise(count = n())
+tempsa <- tempsa[3:4,]
+tempsa <- rename(tempsa, type = sa)
+
 tempsl <- single_victims %>% 
   group_by(sl, fatal) %>% 
   summarise(count = n())
+tempsl <- tempsl[3:4,]
+tempsl <- rename(tempsl, type = sl)
+
 tempso <- single_victims %>% 
   group_by(so, fatal) %>% 
   summarise(count = n())
+tempso <- tempso[3:4,]
+tempso <- rename(tempso, type = so)
 
+temp <- rbind(tempsb, tempsw, tempsl, tempsa, tempso) %>% 
+  group_by(type) %>% 
+  mutate(total = sum(count)) %>% 
+  ungroup() %>% 
+  mutate(prop = count / total)
+
+race_count <- ggplot(temp, aes(x = type, y = count, fill = fatal)) +
+  geom_bar(position = "dodge", stat="identity") + 
+  labs(x = "Present Victim Race", y = "Count", title = "Counts for Fatal vs. Non-Fatal Single-Victim Police Shootings Across Different Races") +
+  theme(legend.text = element_text(size = 8),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x = element_text(angle = 10, hjust = 1, size = 8),
+        plot.title = element_text(size=10, hjust = 0.5)) + 
+  scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
+
+race_prop <- ggplot(temp, aes(x = type, y = prop, fill = fatal)) +
+  geom_bar(position = "stack", stat="identity") + 
+  labs(x = "Present Victim Race", y = "Proportion", title = "Proportions for Fatal vs. Non-Fatal Single-Victim Police Shootings Across Different Races") +
+  theme(legend.text = element_text(size = 7),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x = element_text(angle = 10, hjust = 1, size = 8),
+        plot.title = element_text(size=10, hjust = 0.5)) + 
+  scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
+
+ggsave(filename = "figures/eda1.png", race_count)
+ggsave(filename = "figures/eda2.png", race_prop)
 ```
 
+```{r multiple victims race counts and props}
+tempsb <- mult_victims %>% 
+  group_by(sb, fatal) %>% 
+  summarise(count = n())
+tempsb <- tempsb[3:4,]
+tempsb <- rename(tempsb, type = sb)
+
+tempsw <- mult_victims %>% 
+  group_by(sw, fatal) %>% 
+  summarise(count = n())
+tempsw <- tempsw[3:4,]
+tempsw <- rename(tempsw, type = sw)
+
+tempsa <- mult_victims %>% 
+  group_by(sa, fatal) %>% 
+  summarise(count = n())
+tempsa <- tempsa[3,]
+tempsa[2,] <- list("Asian Victim Present", "Fatal", 0)
+tempsa <- rename(tempsa, type = sa)
+
+tempsl <- mult_victims %>% 
+  group_by(sl, fatal) %>% 
+  summarise(count = n())
+tempsl <- tempsl[3:4,]
+tempsl <- rename(tempsl, type = sl)
+
+temp <- rbind(tempsb, tempsw, tempsl, tempsa) %>% 
+  group_by(type) %>% 
+  mutate(total = sum(count)) %>% 
+  ungroup() %>% 
+  mutate(prop = count / total)
+
+race_count1 <- ggplot(temp, aes(x = type, y = count, fill = fatal)) +
+  geom_bar(position = "dodge", stat="identity") + 
+  labs(x = "Present Victim Race", y = "Count", title = "Counts for Fatal vs. Non-Fatal Multiple-Victim Police Shootings Across Different Races") +
+  theme(legend.text = element_text(size = 8),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x = element_text(angle = 10, hjust = 1, size = 8),
+        plot.title = element_text(size=10, hjust = 0.5)) + 
+  scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
+
+race_prop1 <- ggplot(temp, aes(x = type, y = prop, fill = fatal)) +
+  geom_bar(position = "stack", stat="identity") + 
+  labs(x = "Present Victim Race", y = "Proportion", title = "Proportions for Fatal vs. Non-Fatal Multiple-Victim Police Shootings Across Different Races") +
+  theme(legend.text = element_text(size = 7),
+        legend.key.size = unit(0.4, "cm"),
+        axis.text.x = element_text(angle = 10, hjust = 1, size = 8),
+        plot.title = element_text(size=10, hjust = 0.5)) + 
+  scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
+
+ggsave(filename = "figures/eda3.png", race_count1)
+ggsave(filename = "figures/eda4.png", race_prop1)
+```
 
 ```{r}
 temp <- single_victims %>% 
@@ -273,3 +443,47 @@ ggplot(temp, aes(x=weapon, y=count, fill = Fatal)) +
   labs(x = "Weapon Type", y = "Count", title = "Counts of Each Weapon Type on Victims by Fatal vs. Non-Fatal in Police Shootings") 
 ```
 
+### OLD CODE 
+```{r}
+all <- all %>% 
+  separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
+
+officer_gender <- sapply(str_split(all$OfficerGender, ";"), length)
+officer_race <- sapply(str_split(all$OfficerRace, ";"), length)
+out <- which((officer_gender == officer_race) == FALSE)
+all <- all[-out,]
+
+all <- all %>% 
+  separate_rows(OfficerRace, OfficerGender, sep = ";") %>% 
+  separate_rows(OfficerRace, OfficerGender, sep = ",") 
+
+officer_gender2 <- sapply(str_split(all$OfficerGender, "/"), length)
+officer_race2 <- sapply(str_split(all$OfficerRace, "/"), length)
+out2 <- which((officer_gender2 == officer_race2) == FALSE)
+all <- all[-out2,]
+
+all$OfficerRace <- trimws(all$OfficerRace)
+all$OfficerGender <- trimws(all$OfficerGender)
+all$Fatal <- trimws(all$Fatal)
+
+all <- all %>% 
+  filter(SubjectRace != "U") %>% 
+  filter(OfficerRace != "U") %>% 
+  filter(OfficerRace != "Unknown") %>% 
+  filter(OfficerRace != "NA") %>% 
+  filter(OfficerRace != "") %>% 
+  filter(OfficerRace != "I") %>% 
+  filter(OfficerGender != "U") %>% 
+  filter(OfficerGender != "N") %>% 
+  filter(SubjectGender != "U") %>% 
+  filter(SubjectGender != "N") %>% 
+  filter(Fatal != "U")
+
+all$OfficerRace[all$OfficerRace == "WHITE"] <- "W"
+all$OfficerRace[all$OfficerRace == "BLACK"] <- "B"
+all$OfficerRace[all$OfficerRace == "ASIAN"] <- "A"
+
+all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
+all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
+all$OfficerGender[all$OfficerGender == "Male"] <- "M"
+```

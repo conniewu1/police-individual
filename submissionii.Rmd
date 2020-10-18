@@ -51,53 +51,10 @@ final_df <- readRDS("data/final.rds")
 
 ### Exploratory Data Analysis
 
+|       There appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims.
+
 ```{r num_rows, eval = F}
-final_eda <- final_df %>%
-  mutate(
-      fatal = case_when(
-        fatal == 1 ~ "Fatal",
-        fatal == 0 ~ "Non-Fatal"),
-      sb = case_when(
-        sb == 1 ~ "Victim Type Present",
-        sb == 0 ~ "Victim Type Not Present"
-      ),
-      sw = case_when(
-        sw == 1 ~ "Victim Type Present",
-        sw == 0 ~ "Victim Type Not Present"
-      ),
-      sl = case_when(
-        sl == 1 ~ "Victim Type Present",
-        sl == 0 ~ "Victim Type Not Present"
-      ),
-      sa = case_when(
-        sa == 1 ~ "Victim Type Present",
-        sa == 0 ~ "Victim Type Not Present"
-      ),
-      so = case_when(
-        so == 1 ~ "Victim Type Present",
-        so == 0 ~ "Victim Type Not Present"
-      ),
-      ob = case_when(
-        ob == 1 ~ "Officer Type Present",
-        ob == 0 ~ "Officer Type Not Present"
-      ),
-      ow = case_when(
-        ow == 1 ~ "Officer Type Present",
-        ow == 0 ~ "Officer Type Not Present"
-      ),
-      ol = case_when(
-        ol == 1 ~ "Officer Type Present",
-        ol == 0 ~ "Officer Type Not Present"
-      ),
-      oa = case_when(
-        oa == 1 ~ "Officer Type Present",
-        oa == 0 ~ "Officer Type Not Present"
-      ),
-      oo = case_when(
-        oo == 1 ~ "Officer Type Present",
-        oo == 0 ~ "Officer Type Not Present"
-      )
-  )
+final_eda <- readRDS('data/final_eda.rds')
 
 single_victims <- final_eda %>% 
   filter(NumberOfSubjects <= 1)
@@ -108,31 +65,13 @@ mult_victims <- final_eda %>%
 nrow(mult_victims)
 ```
 
-```{r, eval = F}
-tempsb <- single_victims %>% 
-  group_by(sb, fatal) %>% 
-  summarise(count = n())
-tempsw <- single_victims %>% 
-  group_by(sw, fatal) %>% 
-  summarise(count = n())
-tempsa <- single_victims %>% 
-  group_by(sa, fatal) %>% 
-  summarise(count = n())
-tempsl <- single_victims %>% 
-  group_by(sl, fatal) %>% 
-  summarise(count = n())
-tempso <- single_victims %>% 
-  group_by(so, fatal) %>% 
-  summarise(count = n())
-
-ggplot(single_victims, aes(x = fatal, y = count)) +
-  geom_bar(stat="identity") + 
-  labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
-  group_by(Fatal, race) %>% 
-  summarise(count = n())
+```{r, figures-race, fig.show="hold", out.width="50%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings"}
+par(mar = c(2, 2, .1, .1))
+knitr::include_graphics("figures/eda1.png")
+knitr::include_graphics("figures/eda2.png")
 ```
 
-|       Upon first glance, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among these, 
+|       Among all shootings with only one victim, it appears that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal.
 
 ```{r fatal-eda2, eval = F}
 temp <- all %>% 
@@ -208,8 +147,11 @@ ggplot(temp, aes(x=weapon, y=count, fill = Fatal)) +
 ## III. Preliminary Results
 
 - limitations: time series, also counting N;U... combos as N even though some are unknown
+
 ## References 
 1) Vice 
 2) https://www.pnas.org/content/pnas/116/34/16793.full.pdf
 3) https://www.kpbs.org/news/2020/jun/18/sweeping-change-us-views-police-violence-new-poll-/
 4) http://govred.com/blog/deescalation-training-state-requirements/
+
+## Appendix
