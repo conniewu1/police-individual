@@ -51,7 +51,17 @@ final_df <- readRDS("data/final.rds")
 
 ### Exploratory Data Analysis
 
-|       There appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims.
+|       
+
+```{r, figures-city, fig.show="hold", out.width="22%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings"}
+par(mar = c(3, 3, .1, .1))
+knitr::include_graphics("figures/cityeda1.png")
+knitr::include_graphics("figures/cityeda2.png")
+knitr::include_graphics("figures/cityeda3.png")
+knitr::include_graphics("figures/cityeda4.png")
+```
+
+|       Additionally, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims.
 
 ```{r num_rows, eval = F}
 final_eda <- readRDS('data/final_eda.rds')
@@ -65,10 +75,10 @@ mult_victims <- final_eda %>%
 nrow(mult_victims)
 ```
 
-```{r, figures-race, fig.show="hold", out.width="50%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings"}
+```{r, figures-single, fig.show="hold", out.width="50%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings"}
 par(mar = c(2, 2, .1, .1))
-knitr::include_graphics("figures/eda1.png")
-knitr::include_graphics("figures/eda2.png")
+knitr::include_graphics("figures/singleeda1.png")
+knitr::include_graphics("figures/singleeda2.png")
 ```
 
 |       Among all shootings with only one victim, it appears that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal.

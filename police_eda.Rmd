@@ -13,6 +13,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(tidyverse)
+library(reshape2)
 ```
 
 
@@ -213,43 +214,66 @@ saveRDS(final_eda, 'data/final_eda.rds')
 ```
 
 ```{r race shootings vs population demographics}
-most_pop <- tail(names(sort(table(final_eda$city))), 6)
+most_pop <- head(names(sort(table(final_eda$city), decreasing = TRUE)), 4)
+i <- 1
 
 for (c in most_pop) {
   temp <- final_eda %>% 
     filter(city == c)
   
   vic <- temp %>% 
-  summarise(total_b = sum(str_count(SubjectRace, "B")), 
-            total_w = sum(str_count(SubjectRace, "W")),
-            total_l = sum(str_count(SubjectRace, "L")),
-            total_a = sum(str_count(SubjectRace, "A")),
-            total_o = sum(str_count(SubjectRace, "O")))
+  summarise(Black = sum(str_count(SubjectRace, "B")), 
+            White = sum(str_count(SubjectRace, "W")),
+            Hispanic = sum(str_count(SubjectRace, "L")),
+            Asian = sum(str_count(SubjectRace, "A")),
+            city_pop_2013 = sum(str_count(SubjectRace, "B")) + sum(str_count(SubjectRace, "W")) + 
+              sum(str_count(SubjectRace, "L")) + sum(str_count(SubjectRace, "A")) + 
+              sum(str_count(SubjectRace, "O"))
+  ) %>% 
+    mutate(Black = Black/city_pop_2013, 
+           White = White/city_pop_2013,
+           Hispanic = Hispanic/city_pop_2013,
+           Asian = Asian/city_pop_2013)
   
   vic <- vic %>%
     t() %>%
     as.data.frame(stringsAsFactors = F) %>%
-    rownames_to_column("value") %>%
+    rownames_to_column("race") %>%
     `rownames<-`(NULL)
 
-  demo <- 
-
+  demo <- temp %>% 
+    select(black, white, hispanic, asian, city_pop_2013)  %>% 
+    mutate(black = black/city_pop_2013, 
+           white = white/city_pop_2013,
+           hispanic = hispanic/city_pop_2013,
+           asian = asian/city_pop_2013)
+  demo <- rename(demo, Black = black, White = white, Hispanic = hispanic, Asian = asian)
+  demo <- demo[1,]
+  
+  demo <- demo %>%
+    t() %>%
+    as.data.frame(stringsAsFactors = F) %>%
+    rownames_to_column("race") %>%
+    `rownames<-`(NULL)
+  demo <- rename(demo, V1 = 2)
+  
+  temp2 <- merge(vic, demo, by = "race") %>% 
+    filter(race != "city_pop_2013")
+  temp2 <- rename(temp2, "Shootings" = V1.x, "City-Wide" = V1.y)
+  temp2 <- melt(temp2)
+  
+  plot <- ggplot(temp2, aes(x = race, y = value, fill = variable)) +
+    geom_bar(position = "dodge", stat="identity") + 
+    labs(x = "Victim Race", y = "Proportion", title = paste0("Race Demographics of Shooting Victims vs. ", c, " Population in 2013")) +
+    theme(legend.text = element_text(size = 8),
+          legend.key.size = unit(0.4, "cm"),
+          plot.title = element_text(size=10, hjust = 0.5)) + 
+    scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
+  
+  ggsave(filename = paste0("figures/cityeda", i, ".png"), plot)
+  
+  i <- i + 1
 }
-
-vic <- final_eda %>% 
-  summarise(total_b = sum(str_count(SubjectRace, "B")), 
-            total_w = sum(str_count(SubjectRace, "W")),
-            total_l = sum(str_count(SubjectRace, "L")),
-            total_a = sum(str_count(SubjectRace, "A")),
-            total_o = sum(str_count(SubjectRace, "O")))
-vic <- vic %>%
-  t() %>%
-  as.data.frame(stringsAsFactors = F) %>%
-  rownames_to_column("value") %>%
-  `rownames<-`(NULL)
-
-pop <- final_eda %>% 
-  summarise(total_b = sum())
 ```
 
 ```{r split into single vs mult}
@@ -317,8 +341,8 @@ race_prop <- ggplot(temp, aes(x = type, y = prop, fill = fatal)) +
         plot.title = element_text(size=10, hjust = 0.5)) + 
   scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
 
-ggsave(filename = "figures/eda1.png", race_count)
-ggsave(filename = "figures/eda2.png", race_prop)
+ggsave(filename = "figures/singleeda1.png", race_count)
+ggsave(filename = "figures/singleeda2.png", race_prop)
 ```
 
 ```{r multiple victims race counts and props}
@@ -371,8 +395,8 @@ race_prop1 <- ggplot(temp, aes(x = type, y = prop, fill = fatal)) +
         plot.title = element_text(size=10, hjust = 0.5)) + 
   scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
 
-ggsave(filename = "figures/eda3.png", race_count1)
-ggsave(filename = "figures/eda4.png", race_prop1)
+ggsave(filename = "figures/multeda1.png", race_count1)
+ggsave(filename = "figures/multeda2.png", race_prop1)
 ```
 
 ```{r}
