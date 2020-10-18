@@ -262,12 +262,16 @@ for (c in most_pop) {
   temp2 <- rename(temp2, "Shootings" = V1.x, "City-Wide" = V1.y)
   temp2 <- melt(temp2)
   
+  if (c == "LosAngeles") {
+    c <- "Los Angeles"
+  }
+  
   plot <- ggplot(temp2, aes(x = race, y = value, fill = variable)) +
     geom_bar(position = "dodge", stat="identity") + 
     labs(x = "Victim Race", y = "Proportion", title = paste0("Race Demographics of Shooting Victims vs. ", c, " Population in 2013")) +
     theme(legend.text = element_text(size = 8),
           legend.key.size = unit(0.4, "cm"),
-          plot.title = element_text(size=10, hjust = 0.5)) + 
+          plot.title = element_text(size=13, hjust = 0.5)) + 
     scale_fill_manual(values=c("#D48C7D", "#7DB2D4"))
   
   ggsave(filename = paste0("figures/cityeda", i, ".png"), plot)

@@ -51,17 +51,14 @@ final_df <- readRDS("data/final.rds")
 
 ### Exploratory Data Analysis
 
-|       
+|       Plotted below are the race proportions of shooting victims in the top 4 most popular cities in the dataset (Chicago, Los Angeles, Houston, and Phoenix) vs. the race proportions of those cities' total populations in 2013. Because the bars representing shootings in the Black race category are taller than the bars representing city-wide population in all 4 plots, it is evident Black people are disproportionately the victims of police shootings compared to city race proportions, especially in Chicago and Houston.
 
-```{r, figures-city, fig.show="hold", out.width="22%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings"}
-par(mar = c(3, 3, .1, .1))
+```{r, figures-city, fig.show="hold", out.width="30%", fig.cap="Race Proportions of Shooting Victims vs. City Population Demographics of the Most Popular 4 Cities in the Data "}
 knitr::include_graphics("figures/cityeda1.png")
 knitr::include_graphics("figures/cityeda2.png")
 knitr::include_graphics("figures/cityeda3.png")
 knitr::include_graphics("figures/cityeda4.png")
 ```
-
-|       Additionally, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims.
 
 ```{r num_rows, eval = F}
 final_eda <- readRDS('data/final_eda.rds')
@@ -81,7 +78,7 @@ knitr::include_graphics("figures/singleeda1.png")
 knitr::include_graphics("figures/singleeda2.png")
 ```
 
-|       Among all shootings with only one victim, it appears that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal.
+|       There appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among all shootings with only one victim, it appears that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal.
 
 ```{r fatal-eda2, eval = F}
 temp <- all %>% 
