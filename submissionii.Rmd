@@ -43,33 +43,59 @@ final_df <- readRDS("data/final.rds")
 
 |        Although the VICE News dataset was already relatively clean with regards to the victim's data, there was still quite a bit of cleaning that needed to be done for the race and gender data of the officers. To clean these columns, I replaced all values that were not "W", "B", "A", "O", or "U" in the race column with the most informed guess that I could make about what the values represented. For example, "A/PI" values were taken to represent Asian/Pacific Islander and thus were replaced with "A", and "A/W" or other values with a "/" in them were typically taken to represent multi-racial individuals and as a result were replaced with "O." Similar procedures were carried out in the gender column for officers for values that were not "M", "F", or "U".
 
-|        After this initial cleaning, I created new columns in the same dataset that represented whether any victims of race Black, White, Asian, or Other were present in the crime, respectively, and if any male or female victims were present in the crime, respectively. I also added new columns to represent the same information for officers (for each race and gender, whether each was present), and a new column to represent whether any victim involved in the shooting was shot fatally. Additionally, I made sure that each weapon type had its own column. All of these added columns had values of either 0 or 1, with 0 representing an absence of the variable and 1 a presence. Finally, I filtered out 2,079 rows that had only unknown values for the fatality of the shooting or the races or genders of the victims or officers, as these rows did not provide sufficient information for my analysis, and I selected only the columns I needed, such as whether any victim of the shooting was shot fatally or not, the genders and races of the victims and officers, and the weapons that the victims were carrying, if any.
+|        After this initial cleaning, I created new columns in the same dataset that represented whether any victims of race Black, White, Asian, or Other were present in the crime, respectively, and if any male or female victims were present in the crime, respectively. I also added new columns to represent the same information for officers (for each race and gender, whether each was present), and a new column to represent whether any victim involved in the shooting was shot fatally. Additionally, I made sure that each weapon type had its own column. All of these added columns had values of either 0 or 1, with 0 representing an absence of the variable and 1 a presence. Finally, I filtered out 2,079 rows that had only unknown and NA values for the fatality of the shooting or the races or genders of the victims or officers, as these rows did not provide sufficient information for my analysis, and I selected only the columns I needed, such as whether any victim of the shooting was shot fatally or not, the genders and races of the victims and officers, and the weapons that the victims were carrying, if any.
 
 |        For the gun provisions dataset, I created a new column that sums up the total number of laws listed in the dataset that each state had in 2013 (for the same reason that VICE News used 2013). Additionally, as I mentioned earlier, I appended a column to this dataset representing whether a state requires de-escalation training for police officers as of November 2017. 2017 was used under the assumption that no major event occurred between September 2016 and November 2017 that caused a sudden increase in the number of states that require de-escalation training for police officers. Finally, for the census data, the only cleaning that needed to be done was extracting the state that each city was in from the department column so that the census could be easily joined with the cleaned shootings dataset by city name, as well as the gun provisions dataset by abbreviated state name.
 
-|        After merging the three datasets, the final dataset consists of 2,038 observations and 34 columns.
+|        After merging the three datasets, the final dataset consists of 2,031 observations.
 
 ### Exploratory Data Analysis
 
 ```{r num_rows, eval = F}
-single_victims <- final_df %>% 
+final_eda <- final_df %>%
+  mutate(
+      fatal = case_when(
+        fatal == 1 ~ "Fatal",
+        fatal == 0 ~ "Non-Fatal"
+    )
+  )
+
+single_victims <- final_eda %>% 
   filter(NumberOfSubjects <= 1)
 nrow(single_victims)
 
-mult_victims <- final_df %>% 
+mult_victims <- final_eda %>% 
   filter(NumberOfSubjects > 1)
 nrow(mult_victims)
 ```
 
 ```{r, eval = F}
-ggplot(single_victims, aes(x = Fatal, y = count)) +
+tempsb <- single_victims %>% 
+  group_by(sb, fatal) %>% 
+  summarise(count = n())
+tempsw <- single_victims %>% 
+  group_by(sw, fatal) %>% 
+  summarise(count = n())
+tempsa <- single_victims %>% 
+  group_by(sa, fatal) %>% 
+  summarise(count = n())
+tempsl <- single_victims %>% 
+  group_by(sl, fatal) %>% 
+  summarise(count = n())
+
+## why are there no others?
+tempso <- single_victims %>% 
+  group_by(so, fatal) %>% 
+  summarise(count = n())
+
+ggplot(single_victims, aes(x = fatal, y = count)) +
   geom_bar(stat="identity") + 
   labs(x = "Fatal", y = "Count", title = "Counts for Fatal vs. Non-Fatal Police Shootings") 
   group_by(Fatal, race) %>% 
   summarise(count = n())
 ```
 
-|       Upon first glance, there appears to be 1,890 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among these, 
+|       Upon first glance, there appears to be 1,883 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among these, 
 
 ```{r fatal-eda2, eval = F}
 temp <- all %>% 

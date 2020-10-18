@@ -48,7 +48,7 @@ gun_provisions$state <- state.abb[match(gun_provisions$state,state.name)]
 all <- read.csv("data/allshootingsdata.csv")
 
 # Recode subject race
-all$SubjectRace[is.na(all$SubjectRace)] <- "U"
+all$SubjectRace[is.na(all$SubjectRace)] <- "A"
 
 # Recode officer races
 all$OfficerRace <- gsub("H/L", "L", all$OfficerRace)
@@ -105,6 +105,7 @@ all <- rename(all, sb = b, sw = w, sl = l, sa = a)
 all <- all[-which(all$smale == 0 & all$sfem == 0),]
 all <- all[-which(all$omale == 0 & all$ofem == 0),]
 all <- all[-which(all$sb == 0 & all$sw == 0 & all$sl == 0 & all$sa == 0),]
+all <- all[-which(is.na(all$sb)),]
 all <- all[-which(all$ob == 0 & all$ow == 0 & all$ol == 0 & all$oa == 0),]
 all <- all[-which(str_count(all$Fatal, "F") == 0 & str_count(all$Fatal, "N") == 0),]
 all <- all %>% 
