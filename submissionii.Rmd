@@ -25,7 +25,7 @@ final_df <- readRDS("data/final.rds")
 ## I. Introduction
 
 |        On May 25, 2020, George Floyd was publicly suffocated to death by police officers in Minneapolis, Minnesota. This, along with the murder of Breonna Taylor by Louisville police, incited waves of protests against police brutality across the United States and increased the spread of Black Lives Matter content on social media. The recent boost in attention to the Black Lives Matter movement has once again brought to light the issue of racism in America and its link to police brutality, and more specifically, police use of deadly force. Several studies have already found that race does play a part in who is targeted and killed in police shootings. For example, in a recent VICE News investigation about police shootings, it was found that “Black people were shot more often and at higher rates than people of any other race.” [1] Additionally, Edwards et. al performed a study regarding the effects of age, race-ethnicity, and sex on the risk of being killed by lethal force by law enforcement and similarly found that "Black men are about 2.5 times more likely to be killed by police over the life course than are white men" while "Black women are about 1.4 times more likely to be killed by police than are white women." [2] However, even with these studies and their disturbing conclusions, a poll done by AP-NORC in June 2020 found that still 39% of Americans think that police are not more likely to use lethal force against a Black person than a White person. [3] Although this has decreased from an overwhelming 51% in June 2015, there is still a great deal of research that needs to be done in this area to provide more statistical evidence backing the relationship between racism and police use of deadly force. 
-|        As a result, I have decided to build off of VICE News’ study and investigate data on police shootings further to understand the roles that the race of both victim and officer, as well as other factors such as their genders, whether they are carrying a weapon, and the total number of victims in the crime, play in fatal versus non-fatal police shootings. Additionally, to account for the varying locations of the homicides, I will be using a dataset found on Kaggle detailing the gun provisions that are upheld by each state see how gun legislation affects lethal vs. non-lethal shootings. I will also add a predictor indicating whether the state in which the homicide occurred requires de-escalation training for police officers. Finally, I will explore how the race demographics of each location relates to police use of deadly force. This will allow me to better understand how racism has manifested itself in America’s police system and determine whether current attempts to prevent police use of lethal force are effective or not.
+|        As a result, I have decided to build off of VICE News’ study and investigate data on police shootings further to understand the roles that the race of both victim and officer, as well as other factors such as whether they are carrying a weapon and the total number of victims in the crime, play in fatal versus non-fatal police shootings. Additionally, to account for the varying locations of the homicides, I will be using a dataset found on Kaggle detailing the gun provisions that are upheld by each state see how gun legislation affects lethal vs. non-lethal shootings. I will also add a predictor indicating whether the state in which the homicide occurred requires de-escalation training for police officers. Finally, I will explore how the race demographics of each location relates to police use of deadly force. This will allow me to better understand how racism has manifested itself in America’s police system and determine whether current attempts to prevent police use of lethal force are effective or not.
 
 ### Data
 
@@ -74,14 +74,35 @@ knitr::include_graphics("figures/singleeda2.png")
 
 ### Model 
 
-|        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are fixed effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). From the Exploratory Data Analysis section, it is evident that victim race plays a significant role in whether the shooting is fatal or not. Thus, for both models, I started The predictors that I will use are subject race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not.
-```{r}
-
-```
+|        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are fixed effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). From the Exploratory Data Analysis section, it is evident that victim race plays a significant role in whether the shooting is fatal or not. Thus, for both models, I started with a simple logistic regression model using only victim race as a predictor. From there, I began adding the other predictors that I wanted to explore one at a time and kept an eye on the p-values of all predictors to make sure they all remained significant. Additionally, I performed likelihood ratio tests with each new model iteration to check that the added variable improves the older model. 
+|        The final model for single-victim shootings is written out below:
+\begin{center}
+$$
+log(\frac{p_i}{(1-p_i)}) = \beta_0 + \beta_1\ muEDA_i + \beta_2\ sdEDA_i + \beta_3\ muEDA_i:sdEDA_i + \beta_4\ muTemp_i + \beta_5\ sdTemp_i + \beta_6\ muEMG_i
+$$
+$$
++ \beta_7\ sdEMG_i + \beta_8\ muACC\_Y_i + \beta_9\ sdACC\_Y_i + \beta_{10}\ muACC\_Y_i:muEDA_i + \beta_{11}\ muEDA_i:muTemp_i
+$$
+\end{center}
+|        The final model for multiple-victim shootings written out below:
+\begin{center}
+$$
+log(\frac{p_i}{(1-p_i)}) = \beta_0 + \beta_1\ muEDA_i + \beta_2\ sdEDA_i + \beta_3\ muEDA_i:sdEDA_i + \beta_4\ muTemp_i + \beta_5\ sdTemp_i + \beta_6\ muEMG_i
+$$
+$$
++ \beta_7\ sdEMG_i + \beta_8\ muACC\_Y_i + \beta_9\ sdACC\_Y_i + \beta_{10}\ muACC\_Y_i:muEDA_i + \beta_{11}\ muEDA_i:muTemp_i
+$$
+\end{center}
 
 
 ## III. Preliminary Results
 
+### Analysis Plan
+
+|        For sensitivity analysis, I plan to perform cross-validation on the dataset by holding out 10% of the data to use as a test set and training my models on the other 90% of the data as a way to assess prediction accuracy. 
+
+### Strengths and Limitations
+|        There are several limitations to this study. For example, the VICE News dataset spans over the years 2010 to 2016, and neither of my models will be exploring time series data whatsoever. Thus, the aspect of time may be playing some sort of effect on my response variable that I am not accurately capturing in my models. Additionally, when cleaning the data, there were several "Unknown" values in the fatality column. Unknown values were assumed to represent "No" in this study, although this may not necessarily be true, to allow for more straightforward cleaning of the data and not lose too many observations in the data. Finally, there were less than 200 cases in which there were multiple victims in my final dataset, which is a relatively small sample size. 
 - limitations: time series, also counting N;U... combos as N even though some are unknown
 
 ## References 

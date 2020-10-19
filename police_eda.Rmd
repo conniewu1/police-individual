@@ -74,6 +74,8 @@ all$OfficerGender <- gsub("UNKNOWN|FALSE", "U", toupper(all$OfficerGender))
 all$OfficerGender <- gsub(",|:", ";", toupper(all$OfficerGender))
 all$OfficerGender <- gsub(" |/", "", toupper(all$OfficerGender))
 
+all$SubjectArmed[which(is.na(all$SubjectArmed))] <- "U"
+
 all <- all %>% 
   select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit")) %>% 
   mutate(b = as.numeric(b > 0),
