@@ -45,7 +45,7 @@ final_df <- readRDS("data/final.rds")
 
 ### Exploratory Data Analysis
 
-```{r, figures-city, fig.show="hold", out.width="25%", fig.cap="Race Proportions of Shooting Victims vs. City Population Demographics of the Most Popular 4 Cities in the Data "}
+```{r, figures-city, fig.show="hold", out.width="30%", fig.cap="Race Proportions of Shooting Victims vs. City Population Demographics of the Most Popular 4 Cities in the Data "}
 knitr::include_graphics("figures/cityeda1.png")
 knitr::include_graphics("figures/cityeda2.png")
 knitr::include_graphics("figures/cityeda3.png")
@@ -74,7 +74,7 @@ knitr::include_graphics("figures/singleeda2.png")
 
 ### Model 
 
-|        The predictors that I will use are subject race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not.
+|        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are fixed effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). From the Exploratory Data Analysis section, it is evident that victim race plays a significant role in whether the shooting is fatal or not. Thus, for both models, I started The predictors that I will use are subject race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not.
 ```{r}
 
 ```
