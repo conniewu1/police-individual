@@ -54,8 +54,13 @@ lrtest(fit6, fit7)
 fit8 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace, family = binomial, data=single_victims)
 lrtest(fit8, fit7)
 
-fit9 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace + SubjectArmed, family = binomial, data=single_victims)
+fit9 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace + gun, family = binomial, data=single_victims)
 lrtest(fit8, fit9)
 summary(fit9)
+```
+
+```{r}
+mult1 <- glm(formula = fatal ~ sb + sw + sl + I(black/city_pop_2013) + ob + ow + ol + ow:sb + gun, family = binomial, data=mult_victims)
+summary(mult1)
 ```
 
