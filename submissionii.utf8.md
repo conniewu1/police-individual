@@ -7,20 +7,11 @@ output:
     latex_engine: xelatex
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-```
 
-```{r}
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(tidyverse)
-```
 
-```{r load-data}
-final_df <- readRDS("data/final.rds")
-```
+
+
+
 
 ## I. Introduction
 
@@ -45,30 +36,15 @@ final_df <- readRDS("data/final.rds")
 
 ### Exploratory Data Analysis
 
-```{r, figures-city, fig.show="hold", out.width="25%", fig.cap="Race Proportions of Shooting Victims vs. City Population Demographics of the Most Popular 4 Cities in the Data "}
-knitr::include_graphics("figures/cityeda1.png")
-knitr::include_graphics("figures/cityeda2.png")
-knitr::include_graphics("figures/cityeda3.png")
-knitr::include_graphics("figures/cityeda4.png")
-```
+\begin{figure}
+\includegraphics[width=0.25\linewidth]{figures/cityeda1} \includegraphics[width=0.25\linewidth]{figures/cityeda2} \includegraphics[width=0.25\linewidth]{figures/cityeda3} \includegraphics[width=0.25\linewidth]{figures/cityeda4} \caption{Race Proportions of Shooting Victims vs. City Population Demographics of the Most Popular 4 Cities in the Data }\label{fig:figures-city}
+\end{figure}
 |       Plotted above in \emph{Figure 1} are the race proportions of shooting victims in the top 4 most popular cities in the dataset (Chicago, Los Angeles, Houston, and Phoenix) vs. the race proportions of those cities' total populations in 2013. Because the bars representing shootings in the Black race category are taller than the bars representing city-wide population in all 4 plots, it is evident Black people are disproportionately the victims of police shootings compared to city race proportions. This can especially be seen in Houston, where Black people make up less than 25% of the city population yet more than 50% of the victim population of police shootings.
-```{r num_rows, eval = F}
-final_eda <- readRDS('data/final_eda.rds')
 
-single_victims <- final_eda %>% 
-  filter(NumberOfSubjects <= 1)
-nrow(single_victims)
 
-mult_victims <- final_eda %>% 
-  filter(NumberOfSubjects > 1)
-nrow(mult_victims)
-```
-
-```{r, figures-single, fig.show="hold", out.width="50%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings"}
-par(mar = c(2, 2, .1, .1))
-knitr::include_graphics("figures/singleeda1.png")
-knitr::include_graphics("figures/singleeda2.png")
-```
+\begin{figure}
+\includegraphics[width=0.5\linewidth]{figures/singleeda1} \includegraphics[width=0.5\linewidth]{figures/singleeda2} \caption{Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings}\label{fig:figures-single}
+\end{figure}
 |       Additionally, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among all shootings with only one victim, it appears in \emph{Figure 2} that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal. 
 |       Similarly, Black victims make up the highest proportion of victims in shootings with multiple victims. However, in these shootings, all race types are more likely to be shot non-fatally than fatally, with Latinos having the highest proportion of being shot fatally out of all other race types. Additionally, it should be noted that there are no victims with race type "Other" in shootings where there are multiple victims. These graphs can be found as \emph{Figure 3} in the Appendix. 
 
@@ -76,9 +52,7 @@ knitr::include_graphics("figures/singleeda2.png")
 ### Model 
 
 |        The predictors that I will use are subject race, subject gender, officer race, officer gender, and the type of weapon the subject was carrying. The response I will be modeling will be whether the shooting was fatal or not.
-```{r}
 
-```
 
 
 ## III. Preliminary Results
@@ -94,23 +68,18 @@ knitr::include_graphics("figures/singleeda2.png")
 ## Appendix
 
 ### Exploratory Data Analysis
-```{r, figures-mult, fig.show="hold", out.width="50%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Multiple Victim Shootings"}
-par(mar = c(2, 2, .1, .1))
-knitr::include_graphics("figures/multeda1.png")
-knitr::include_graphics("figures/multeda2.png")
-```
+\begin{figure}
+\includegraphics[width=0.5\linewidth]{figures/multeda1} \includegraphics[width=0.5\linewidth]{figures/multeda2} \caption{Counts (left) and Proportions (right) of Different Races Across Multiple Victim Shootings}\label{fig:figures-mult}
+\end{figure}
 
-```{r, figures-btw, fig.show="hold", out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset"}
-par(mar = c(2, 2, .1, .1))
-knitr::include_graphics("figures/btweda.png")
-```
+\begin{figure}
+\includegraphics[width=0.5\linewidth]{figures/btweda} \caption{Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset}\label{fig:figures-btw}
+\end{figure}
 
-```{r, figures-bprop, fig.show="hold", out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black Population Percentages in Cities in Dataset"}
-par(mar = c(2, 2, .1, .1))
-knitr::include_graphics("figures/bpropeda.png")
-```
+\begin{figure}
+\includegraphics[width=0.5\linewidth]{figures/bpropeda} \caption{Proportion of Fatal Shootings vs. Black Population Percentages in Cities in Dataset}\label{fig:figures-bprop}
+\end{figure}
 
-```{r, figures-officersbprop, fig.show="hold", out.width="50%", fig.cap="Race Proportions for Fatal vs. Non-Fatal Police Shootings Where At Least One Black Victim was Present"}
-par(mar = c(2, 2, .1, .1))
-knitr::include_graphics("figures/officerpropsb.png")
-```
+\begin{figure}
+\includegraphics[width=0.5\linewidth]{figures/officerpropsb} \caption{Race Proportions for Fatal vs. Non-Fatal Police Shootings Where At Least One Black Victim was Present}\label{fig:figures-officersbprop}
+\end{figure}

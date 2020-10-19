@@ -15,73 +15,46 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(tidyverse)
+library(lmtest)
 ```
 
 ```{r load-data}
-# Shootings
-all <- read.csv("data/allshootingsdata.csv")
-all <- all %>% 
-  mutate(id = paste0("C", row_number()))
+final_df <- readRDS("data/final.rds")
 
-# Census Predictors
-census <- read.csv("data/2013census.csv")[,-c(8,9)]
-states <- lapply(census$department, function(x) str_extract_all(x,"\\([^()]+\\)")[[1]])
-states <- substring(states, 2, nchar(states)-1)
-census$state <- states
+single_victims <- final_df %>% 
+  filter(NumberOfSubjects <= 1)
 
-# Gun Law Predictors
-gun_provisions <- read.csv("data/gun_provisions.csv") %>% 
-  filter(year == 2013)
-gun_provisions <- gun_provisions %>% 
-  mutate(total_pr = rowSums(gun_provisions[,3:136]),
-         deesc_train = ifelse(state %in% c("California", "New Mexico", "Texas", "Oklahoma", "South Dakota", "Illinois", "Indiana", "Tennessee", "Washington", "Missouri", "Georgia", "Ohio", "Maryland", "Massachusetts", "Connecticut", "Maine"), 1, 0)) %>% 
-  select(state, total_pr, deesc_train)
-gun_provisions$state <- state.abb[match(gun_provisions$state,state.name)]
+mult_victims <- final_df %>% 
+  filter(NumberOfSubjects > 1)
 ```
 
-```{r clean-all}
-all <- all %>% 
-  select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit"))
+```{r}
+fit1 <- glm(formula = fatal ~ SubjectRace, family = binomial, data=single_victims)
 
-all <- all %>% 
-  separate_rows(SubjectRace, SubjectGender, Fatal, sep = ";")
+fit2 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013), family = binomial, data=single_victims)
+lrtest(fit2, fit1)
+summary(fit2)
 
-officer_gender <- sapply(str_split(all$OfficerGender, ";"), length)
-officer_race <- sapply(str_split(all$OfficerRace, ";"), length)
-out <- which((officer_gender == officer_race) == FALSE)
-all <- all[-out,]
+# Victim Gender doesn't appear to be significant
+fit3 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + SubjectGender, family = binomial, data=single_victims)
+lrtest(fit3, fit2)
 
-all <- all %>% 
-  separate_rows(OfficerRace, OfficerGender, sep = ";") %>% 
-  separate_rows(OfficerRace, OfficerGender, sep = ",") 
+fit4 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob, family = binomial, data=single_victims)
+lrtest(fit3, fit4)
 
-officer_gender2 <- sapply(str_split(all$OfficerGender, "/"), length)
-officer_race2 <- sapply(str_split(all$OfficerRace, "/"), length)
-out2 <- which((officer_gender2 == officer_race2) == FALSE)
-all <- all[-out2,]
+fit5 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow, family = binomial, data=single_victims)
+lrtest(fit5, fit4)
 
-all$OfficerRace <- trimws(all$OfficerRace)
-all$OfficerGender <- trimws(all$OfficerGender)
-all$Fatal <- trimws(all$Fatal)
+fit6 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol, family = binomial, data=single_victims)
+lrtest(fit5, fit6)
 
-all <- all %>% 
-  filter(SubjectRace != "U") %>% 
-  filter(OfficerRace != "U") %>% 
-  filter(OfficerRace != "Unknown") %>% 
-  filter(OfficerRace != "NA") %>% 
-  filter(OfficerRace != "") %>% 
-  filter(OfficerRace != "I") %>% 
-  filter(OfficerGender != "U") %>% 
-  filter(OfficerGender != "N") %>% 
-  filter(SubjectGender != "U") %>% 
-  filter(SubjectGender != "N") %>% 
-  filter(Fatal != "U")
+fit7 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace, family = binomial, data=single_victims)
+lrtest(fit6, fit7)
 
-all$OfficerRace[all$OfficerRace == "WHITE"] <- "W"
-all$OfficerRace[all$OfficerRace == "BLACK"] <- "B"
-all$OfficerRace[all$OfficerRace == "ASIAN"] <- "A"
+fit8 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace, family = binomial, data=single_victims)
+lrtest(fit8, fit7)
 
-all$OfficerGender[all$OfficerGender == "FEMALE"] <- "F"
-all$OfficerGender[all$OfficerGender == "MALE"] <- "M"
-all$OfficerGender[all$OfficerGender == "Male"] <- "M"
+fit9 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace + SubjectArmed, family = binomial, data=single_victims)
+lrtest(fit8, fit9)
 ```
+
