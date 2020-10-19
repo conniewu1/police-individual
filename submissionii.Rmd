@@ -16,6 +16,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(tidyverse)
+library(knitr)
 ```
 
 ```{r load-data}
@@ -32,7 +33,7 @@ final_df <- readRDS("data/final.rds")
 
 |        As a basis for this study, I will be using the same dataset that VICE News used. This dataset contains data on officer-involved shootings from 47 of the largest local police departments in America, and more specifically, “information on 4,117 incidents and 4,400 subjects [(victims)] over seven years.” [1] VICE News provides 34 variables in the dataset, including dates ranging from January 2010 to September 2016, 47 unique cities, subject race, subject gender, office race, officer gender, the type of weapon the subject was carrying, and whether the shooting was fatal or not. Race was broken up into 5 categories: White (non-Hispanic) (represented as W), Black (non-Hispanic) (B), Asian (A), Latino (L), Other (O), and Unknown (U). Gender was broken up into 3 categories: Male (M), Female (F), and Unknown (U). Weapon type was broken up into 6 values: "gun", "knife", "replica", "other", "unknown", and "other". Additionally, there were cases in which multiple victims and/or multiple officers were present in the shooting. Each of these scenarios was still represented within one row of the dataset, but semi-colons were present in the respective victim and officer columns, separating each individual's information from each other.
 
-|       Additionally, to assess the effect of different types of legislation on fatal vs. non-fatal police shootings in various states, I will be using a dataset from Kaggle containing 135 variables that detail whether a certain gun provision is absent or present in a certain year and U.S. state for 133 different gun provisions. The years range from 1991 to 2017, and the gun provisions address 14 categories, some of which are dealer regulations, buyer regulations, prohibitions for high-risk gun possession, background checks, ammunition regulations, possession regulations, concealed carry permitting, assault weapons and large-capacity magazines, child access prevention, gun trafficking, and domestic violence. A 1 in the gun provision column represents a presence of the law, and a 0 indicates an absence. I will also add a column to this gun provision dataset indicating whether a state requires de-escalation training based off of information reported by APM Report in 2017, with a 1 meaning the state does require training and a 0 meaning the state does not. There were 16 states that required de-escalation training as of November 2017. [4] 
+|       Additionally, to assess the effect of different types of legislation on fatal vs. non-fatal police shootings in various states, I will be using a dataset from Kaggle containing 135 variables that detail whether a certain gun provision is absent or present in a certain year and U.S. state for 133 different gun provisions. [4] The years range from 1991 to 2017, and the gun provisions address 14 categories, some of which are dealer regulations, buyer regulations, prohibitions for high-risk gun possession, background checks, ammunition regulations, possession regulations, concealed carry permitting, assault weapons and large-capacity magazines, child access prevention, gun trafficking, and domestic violence. A 1 in the gun provision column represents a presence of the law, and a 0 indicates an absence. I will also add a column to this gun provision dataset indicating whether a state requires de-escalation training based off of information reported by APM Report in 2017, with a 1 meaning the state does require training and a 0 meaning the state does not. There were 16 states that required de-escalation training as of November 2017. [5] 
 
 |       Finally, to examine city demographics as a predictor, I will be using population data from the 2013 American Community Survey that VICE News had already cleaned and standardized to the shootings dataset, meaning the city names can be matched up between the two datasets. VICE News most likely provided only 2013 census data because it is the average year of all the years represented in the shootings dataset. Furthermore, using census data only from 2013 requires that we analyze this data under the assumption that there is no drastic difference in population demographics between 2010 and 2016. The census data includes 7 variables: the police department and the city it's located in, as well as the city's Black, Asian, Hispanic, White, and overall total population in 2013. 
 
@@ -89,7 +90,7 @@ knitr::include_graphics("figures/multeda2.png")
 
 ### Model 
 
-|        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are fixed effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). From the Exploratory Data Analysis section, it is evident that victim race plays a significant role in whether the shooting is fatal or not. Thus, for both models, I started with a simple logistic regression model using only victim race as a predictor. From there, I began adding the other predictors that I wanted to explore one at a time and kept an eye on the p-values of all predictors to make sure they all remained significant. Additionally, I performed likelihood ratio tests with each new model iteration to check that the added variable improves the older model. 
+|        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are fixed effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). From the Exploratory Data Analysis section, it is evident that victim race plays a significant role in whether the shooting is fatal or not. Thus, for both models, I started with a simple logistic regression model using only victim race as a predictor. From there, I began adding the other predictors that I wanted to explore one at a time and performed likelihood ratio tests with each new model iteration to make sure that the added variable improves the previous model. This means that the likelihood ratio test's p-value is less than 0.05. 
 
 |        The final model for single-victim shootings is written out below:
 ```{r, eval = F}
@@ -114,13 +115,13 @@ $$
 |        The final model for multiple-victim shootings is written out below:
 \begin{center}
 $$
-log(\frac{p_i}{(1-p_i)}) = \beta_0 + \beta_1\ black\_victim\_present_i + \beta_2\ white\_victim\_present_i +  \beta_3\ latino\_victmi\_present_i + \beta_4\ (\frac{black_i}{city\_pop_i}) +
+log(\frac{p_i}{(1-p_i)}) = \beta_0 + \beta_1\ black\_victim\_present_i + \beta_2\ white\_victim\_present_i +  \beta_3\ latino\_victmi\_present_i +
 $$
 $$
-\beta_{5}\ black\_officer\_present_i + \beta_{6}\ white\_officer\_present_i + \beta_{7}\ latino\_officer\_present_i
+\beta_4\ (\frac{black_i}{city\_pop_i}) + \beta_{5}\ black\_officer\_present_i + \beta_{6}\ white\_officer\_present_i +
 $$
 $$
-+ \beta_{8} \ victim\_armed\_gun_i + \beta_{9} \ white\_officer\_present_i*black\_victim\_present_i
+ \beta_{7}\ latino\_officer\_present_i + \beta_{8} \ victim\_armed\_gun_i + \beta_{9} \ white\_officer\_present_i*black\_victim\_present_i
 $$
 \end{center}
 
@@ -129,7 +130,7 @@ $$
 
 ### Analysis Plan
 
-|        Preliminarily, it appears that none of the legislation variables were significant in predicting whether one was shot fatally or not, and thus were not included in either of the models. Additionally, victim race and officer race both are significant individually and as part of interaction terms, which will be interesting to quantify. In the next revision, I hope to analyze the coefficients of these predictors in terms of odds ratios in order to determine the relationships between each of these predictors and police shooting fatality.
+|        Preliminarily, it appears that none of the legislation variables were significant in predicting whether one was shot fatally or not, and thus these were not included in either of the models. Additionally, victim and officer race both are significant individually and as part of interaction terms, which will be interesting to quantify. As expected, the coefficient for subject race type Black is positive in both models, meaning Black victims are more likely to be shot fatally. In the next revision, when quantifying the effects of each of these predictors on police shooting fatality, I will be analyzing the coefficients in terms of odds ratios, since I used logistic regression models. I also will most likely change the baseline to be White for both victim and officer race, since I want to investigate racism against minorities specifically in the law enforcement system.   
 
 |        For sensitivity analysis, I plan to perform cross-validation on the dataset by holding out 10% of the data to use as a test set and training my models on the other 90% of the data as a way to assess prediction accuracy. For model diagnostics, I will plot binned residual plots and ROC curves to assess how well my models fit the data.
 
@@ -139,23 +140,50 @@ $$
 
 
 ## References 
-1) Vice 
-2) https://www.pnas.org/content/pnas/116/34/16793.full.pdf
-3) https://www.kpbs.org/news/2020/jun/18/sweeping-change-us-views-police-violence-new-poll-/
-4) http://govred.com/blog/deescalation-training-state-requirements/
+
+[1] McCann, Allison, et al. “Police Shoot Far More People than Anyone Realized, a VICE News Investigation Reveals.” VICE News, VICE News, 12 Dec. 2017, news.vice.com/en_us/article/xwvv3a/shot-by-cops. 
+
+[2] Edwards, Frank, et al. “Risk of Being Killed by Police Use of Force in the United States by Age, Race–Ethnicity, and Sex.” PNAS, PNAS, 20 Aug. 2019, www.pnas.org/content/116/34/16793. 
+
+[3] Press, Associated. “Sweeping Change In US Views Of Police Violence, New Poll Finds.” KPBS Public Media, KPBS, 18 June 2020, www.kpbs.org/news/2020/jun/18/sweeping-change-us-views-police-violence-new-poll-/. 
+
+[4] https://www.kaggle.com/jboysen/state-firearms
+
+[5] Gilbert, Curtis. “Most States Neglect Ordering Police to Learn De-Escalation Tactics to Avoid Shootings.” Not Trained to Not Kill | APM Reports, APM Reports, 16 Sept. 2020, www.apmreports.org/story/2017/05/05/police-de-escalation-training.
+
+[6] DeGue, Sarah et al. “Deaths Due to Use of Lethal Force by Law Enforcement: Findings From the National Violent Death Reporting System, 17 U.S. States, 2009-2012.” American journal of preventive medicine vol. 51,5 Suppl 3 (2016): S173-S187. doi:10.1016/j.amepre.2016.08.027
 
 ## Appendix
 
-### Exploratory Data Analysis
-
-```{r, figures-btw, fig.show="hold", out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset (left) and vs. Black Population Percentages in Cities in Dataset (right)"}
+```{r, figures-btw, out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset (left) and vs. Black Population Percentages in Cities in Dataset (right)"}
 par(mar = c(2, 2, .1, .1))
 knitr::include_graphics("figures/btweda.png")
 knitr::include_graphics("figures/bpropeda.png")
 ```
 
-```{r, figures-officersbprop, fig.show="hold", out.width="50%", fig.cap="Race Proportions of Officers For All Shootings (left) and For Fatal vs. Non-Fatal Police Shootings Where At Least One Black Victim was Present (right) and "}
+```{r, figures-officersbprop, out.width="50%", fig.cap="Race Proportions of Officers For All Shootings (left) and For Fatal vs. Non-Fatal Police Shootings Where At Least One Black Victim was Present (right) and "}
 par(mar = c(2, 2, .1, .1))
 knitr::include_graphics("figures/officerprop.png")
 knitr::include_graphics("figures/officerpropsb.png")
 ```
+
+```{r single and mult}
+single_victims <- final_df %>% 
+  filter(NumberOfSubjects <= 1)
+
+mult_victims <- final_df %>% 
+  filter(NumberOfSubjects > 1)
+```
+
+#### Single-Victim Shooting
+```{r single fit}
+fit9 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace + gun, family = binomial, data=single_victims)
+kable(summary(fit9)$coefficients)
+```
+
+#### Multiple-Victim Shooting
+```{r mult fit}
+mult1 <- glm(formula = fatal ~ sb + sw + sl + I(black/city_pop_2013) + ob + ow + ol + ow:sb + gun, family = binomial, data=mult_victims)
+kable(summary(mult1)$coefficients)
+```
+
