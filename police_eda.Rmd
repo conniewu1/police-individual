@@ -459,10 +459,25 @@ temp <- final_df %>%
             Hispanic = sum(str_count(OfficerRace, "L")),
             Asian = sum(str_count(OfficerRace, "A")), 
             Other = sum(str_count(OfficerRace, "O")))
-ggplot(temp, aes(x = ))
+
+temp2 <- temp %>%
+    t() %>%
+    as.data.frame(stringsAsFactors = F) %>%
+    rownames_to_column("race") %>%
+    `rownames<-`(NULL)
+temp2 <- rename(temp2, Count = 2) %>% 
+  mutate(total = Count/sum(Count))
+
+officerplot2 <- ggplot(temp2, aes(x=race, y = total)) +
+  geom_bar(position = "dodge", stat="identity", fill ="#D48C7D") + 
+  labs(x = "Officer Race", y = "Proportion", title = "Race Proportions of Officers for All Shootings") +
+  theme(legend.text = element_text(size = 7),
+        legend.key.size = unit(0.4, "cm"),
+        plot.title = element_text(size=10, hjust = 0.5))
+ggsave(filename = "figures/officerprop.png", officerplot2)
 ```
 
-```{r}
+```{r sb-officer}
 temp <- final_df %>% 
   filter(sb == 1) %>% 
   group_by(fatal) %>% 
@@ -489,7 +504,7 @@ temp2 <- melt(temp2)
 
 officerplot <- ggplot(temp2, aes(x=race, y = value, fill = variable)) +
   geom_bar(position = "dodge", stat="identity") + 
-  labs(x = "Officer Race", y = "Proportion", title = "Race Proportions for Fatal vs. Non-Fatal Police Shootings Where Black Victims were Present") +
+  labs(x = "Officer Race", y = "Proportion", title = "Race Proportions of Officers Present at Fatal vs. Non-Fatal Police Shootings Involving Black Victims") +
   theme(legend.text = element_text(size = 7),
         legend.key.size = unit(0.4, "cm"),
         plot.title = element_text(size=10, hjust = 0.5)) + 
@@ -498,6 +513,7 @@ officerplot <- ggplot(temp2, aes(x=race, y = value, fill = variable)) +
 ggsave(filename = "figures/officerpropsb.png", officerplot)
 ```
 
+Nothing too crazy happening here.
 
 ### OLD CODE 
 ```{r}

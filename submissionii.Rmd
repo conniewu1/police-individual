@@ -63,7 +63,6 @@ mult_victims <- final_eda %>%
   filter(NumberOfSubjects > 1)
 nrow(mult_victims)
 ```
-
 ```{r, figures-single, fig.show="hold", out.width="50%", fig.cap="Counts (left) and Proportions (right) of Different Races Across Single Victim Shootings"}
 par(mar = c(2, 2, .1, .1))
 knitr::include_graphics("figures/singleeda1.png")
@@ -100,17 +99,14 @@ knitr::include_graphics("figures/multeda1.png")
 knitr::include_graphics("figures/multeda2.png")
 ```
 
-```{r, figures-btw, fig.show="hold", out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset"}
+```{r, figures-btw, fig.show="hold", out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset (left) and vs. Black Population Percentages in Cities in Dataset (right)"}
 par(mar = c(2, 2, .1, .1))
 knitr::include_graphics("figures/btweda.png")
-```
-
-```{r, figures-bprop, fig.show="hold", out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black Population Percentages in Cities in Dataset"}
-par(mar = c(2, 2, .1, .1))
 knitr::include_graphics("figures/bpropeda.png")
 ```
 
-```{r, figures-officersbprop, fig.show="hold", out.width="50%", fig.cap="Race Proportions for Fatal vs. Non-Fatal Police Shootings Where At Least One Black Victim was Present"}
+```{r, figures-officersbprop, fig.show="hold", out.width="50%", fig.cap="Race Proportions of Officers For All Shootings (left) and For Fatal vs. Non-Fatal Police Shootings Where At Least One Black Victim was Present (right) and "}
 par(mar = c(2, 2, .1, .1))
+knitr::include_graphics("figures/officerprop.png")
 knitr::include_graphics("figures/officerpropsb.png")
 ```
