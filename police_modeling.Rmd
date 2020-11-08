@@ -21,8 +21,18 @@ library(lmtest)
 ```{r load-data}
 final_df <- readRDS("data/final.rds")
 
+# Combining Asian and Other so model will converge
+final_df$SubjectRace[final_df$SubjectRace == "A"] <- "O"
+final_df$OfficerRace[final_df$OfficerRace == "A"] <- "O"
+
+final_df <- final_df %>% 
+  mutate(so = as.numeric(str_count(final_df$SubjectRace, "O|A") > 0),
+         oo = as.numeric(str_count(final_df$OfficerRace, "O|A") > 0)) %>% 
+  select(-c(sa, oa))
+
 single_victims <- final_df %>% 
-  filter(NumberOfSubjects <= 1)
+  filter(NumberOfSubjects <= 1) %>% 
+  mutate(SubjectRace = relevel(as.factor(SubjectRace), "W"))
 
 mult_victims <- final_df %>% 
   filter(NumberOfSubjects > 1)

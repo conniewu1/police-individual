@@ -16,16 +16,7 @@ library(tidyverse)
 library(reshape2)
 ```
 
-
 ## Load Data
-
-```{r}
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(tidyverse)
-library(reshape2)
-```
 
 ```{r load-data}
 # Census Predictors
@@ -60,6 +51,7 @@ all$OfficerRace <- gsub("WHITE|WLITE", "W", all$OfficerRace)
 all$OfficerRace <- gsub("BLACK", "B", all$OfficerRace)
 all$OfficerRace <- gsub("ASIAN", "A", all$OfficerRace)
 all$OfficerRace <- gsub("Other|AI/AN|NA/W|Multi-Racial", "O", all$OfficerRace)
+all$OfficerRace <- gsub("NA", "O", all$OfficerRace)
 all$OfficerRace <- gsub("A/PI ", "A;", all$OfficerRace)
 all$OfficerRace <- gsub("A/PI", "A", all$OfficerRace)
 all$OfficerRace <- gsub(",", ";", all$OfficerRace)
@@ -515,4 +507,4 @@ officerplot <- ggplot(temp2, aes(x=race, y = value, fill = variable)) +
 ggsave(filename = "figures/officerpropsb.png", officerplot)
 ```
 
-Nothing too crazy happening here.
+Nothing too crazy happening here. 
