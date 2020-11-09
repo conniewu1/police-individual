@@ -16,16 +16,7 @@ library(tidyverse)
 library(reshape2)
 ```
 
-
 ## Load Data
-
-```{r}
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(tidyverse)
-library(reshape2)
-```
 
 ```{r load-data}
 # Census Predictors
@@ -60,6 +51,7 @@ all$OfficerRace <- gsub("WHITE|WLITE", "W", all$OfficerRace)
 all$OfficerRace <- gsub("BLACK", "B", all$OfficerRace)
 all$OfficerRace <- gsub("ASIAN", "A", all$OfficerRace)
 all$OfficerRace <- gsub("Other|AI/AN|NA/W|Multi-Racial", "O", all$OfficerRace)
+all$OfficerRace <- gsub("NA", "O", all$OfficerRace)
 all$OfficerRace <- gsub("A/PI ", "A;", all$OfficerRace)
 all$OfficerRace <- gsub("A/PI", "A", all$OfficerRace)
 all$OfficerRace <- gsub(",", ";", all$OfficerRace)
@@ -75,6 +67,11 @@ all$OfficerGender <- gsub(",|:", ";", toupper(all$OfficerGender))
 all$OfficerGender <- gsub(" |/", "", toupper(all$OfficerGender))
 
 all$SubjectArmed[which(is.na(all$SubjectArmed))] <- "U"
+
+numofficerna <- which(is.na(all$NumberOfOfficers))
+replacement <- str_count(all$OfficerRace[numofficerna], ";")
+replacement <- replacement + 1
+all$NumberOfOfficers[numofficerna] <- replacement
 
 all <- all %>% 
   select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit")) %>% 
@@ -92,9 +89,10 @@ all <- all %>%
          oo =  as.numeric(str_count(all$OfficerRace, "O") > 0),
          omale = as.numeric(str_count(all$OfficerGender, "M") > 0),
          ofem = as.numeric(str_count(all$OfficerGender, "F") > 0),
-         other = as.numeric(other), 
-         replica = as.numeric(replica), 
-         knife = as.numeric(knife), 
+         omult = as.numeric(all$NumberOfOfficers != "1"),
+         other = as.numeric(weapon == "other"), 
+         replica = as.numeric(weapon == "replica"), 
+         knife = as.numeric(weapon == "knife"), 
          gun = as.numeric(weapon == "gun"), 
          unarmed = as.numeric(weapon == "unarmed"),
          unknown_weapon = as.numeric(weapon == "U"),
@@ -122,6 +120,7 @@ final_df <- merge(final_df, gun_provisions, by = "state")
 final_df <- final_df %>% 
   select(-c(department, year))
 final_df$NumberOfSubjects[which(final_df$NumberOfSubjects == 0)] <- 1
+final_df$NumberOfOfficers[which(final_df$NumberOfOfficers == "U")] <- 1
 ```
 
 ```{r save-final-df}
@@ -515,4 +514,4 @@ officerplot <- ggplot(temp2, aes(x=race, y = value, fill = variable)) +
 ggsave(filename = "figures/officerpropsb.png", officerplot)
 ```
 
-Nothing too crazy happening here.
+Nothing too crazy happening here. 
