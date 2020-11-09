@@ -68,6 +68,11 @@ all$OfficerGender <- gsub(" |/", "", toupper(all$OfficerGender))
 
 all$SubjectArmed[which(is.na(all$SubjectArmed))] <- "U"
 
+numofficerna <- which(is.na(all$NumberOfOfficers))
+replacement <- str_count(all$OfficerRace[numofficerna], ";")
+replacement <- replacement + 1
+all$NumberOfOfficers[numofficerna] <- replacement
+
 all <- all %>% 
   select(-c("Date", "NatureOfStop", "Notes", "SubjectAge", "NumberOfShots", "Department", "FullNarrative", "fdate", "month", "day", "tr", "AvgAge", "VA", "F", "nshots", "sit")) %>% 
   mutate(b = as.numeric(b > 0),
@@ -84,9 +89,10 @@ all <- all %>%
          oo =  as.numeric(str_count(all$OfficerRace, "O") > 0),
          omale = as.numeric(str_count(all$OfficerGender, "M") > 0),
          ofem = as.numeric(str_count(all$OfficerGender, "F") > 0),
-         other = as.numeric(other), 
-         replica = as.numeric(replica), 
-         knife = as.numeric(knife), 
+         omult = as.numeric(all$NumberOfOfficers != "1"),
+         other = as.numeric(weapon == "other"), 
+         replica = as.numeric(weapon == "replica"), 
+         knife = as.numeric(weapon == "knife"), 
          gun = as.numeric(weapon == "gun"), 
          unarmed = as.numeric(weapon == "unarmed"),
          unknown_weapon = as.numeric(weapon == "U"),
@@ -114,6 +120,7 @@ final_df <- merge(final_df, gun_provisions, by = "state")
 final_df <- final_df %>% 
   select(-c(department, year))
 final_df$NumberOfSubjects[which(final_df$NumberOfSubjects == 0)] <- 1
+final_df$NumberOfOfficers[which(final_df$NumberOfOfficers == "U")] <- 1
 ```
 
 ```{r save-final-df}

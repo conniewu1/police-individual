@@ -29,16 +29,13 @@ final_df <- readRDS("data/final.rds")
 
 |        As a result, I have decided to build off of VICE News’ study and investigate data on police shootings further to understand the roles that the race of both victim and officer, as well as other factors such as whether they are carrying a weapon and the total number of victims in the crime, play in fatal versus non-fatal police shootings. Additionally, to account for the varying locations of the homicides, I will be using a dataset found on Kaggle detailing the gun provisions that are upheld by each state see how gun legislation affects lethal vs. non-lethal shootings. I will also add a predictor indicating whether the state in which the homicide occurred requires de-escalation training for police officers. Finally, I will explore how the race demographics of each location relates to police use of deadly force. This will allow me to better understand how racism has manifested itself in America’s police system and determine whether current attempts to prevent police use of lethal force are effective or not.
 
-### Data
+## II. Data
 
 |        As a basis for this study, I will be using the same dataset that VICE News used. This dataset contains data on officer-involved shootings from 47 of the largest local police departments in America, and more specifically, “information on 4,117 incidents and 4,400 subjects [(victims)] over seven years.” [1] VICE News provides 34 variables in the dataset, including dates ranging from January 2010 to September 2016, 47 unique cities, subject race, subject gender, office race, officer gender, the type of weapon the subject was carrying, and whether the shooting was fatal or not. Race was broken up into 6 categories: White (non-Hispanic) (represented as W), Black (non-Hispanic) (B), Asian (A), Latino (L), Other (O), and Unknown (U). Gender was broken up into 3 categories: Male (M), Female (F), and Unknown (U). Weapon type was broken up into 5 values: "gun", "knife", "replica", "other", and "unknown". Additionally, there were cases in which multiple victims and/or multiple officers were present in the shooting. Each of these scenarios was still represented within one row of the dataset, but semi-colons were present in the respective victim and officer columns, separating each individual's information from each other.
 
 |       Additionally, to assess the effect of different types of legislation on fatal vs. non-fatal police shootings in various states, I will be using a dataset from Kaggle containing 135 variables that detail whether a certain gun provision is absent or present in a certain year and U.S. state for 133 different gun provisions. [4] The years range from 1991 to 2017, and the gun provisions address 14 categories, some of which are dealer regulations, buyer regulations, prohibitions for high-risk gun possession, background checks, ammunition regulations, possession regulations, concealed carry permitting, assault weapons and large-capacity magazines, child access prevention, gun trafficking, and domestic violence. A 1 in the gun provision column represents a presence of the law, and a 0 indicates an absence. I will also add a column to this gun provision dataset indicating whether a state requires de-escalation training based off of information reported by APM Report in 2017, with a 1 meaning the state does require training and a 0 meaning the state does not. There were 16 states that required de-escalation training as of November 2017. [5] 
 
 |       Finally, to examine city demographics as a predictor, I will be using population data from the 2013 American Community Survey that VICE News had already cleaned and standardized to the shootings dataset, meaning the city names can be matched up between the two datasets. VICE News most likely provided only 2013 census data because it is the average year of all the years represented in the shootings dataset. Furthermore, using census data only from 2013 requires that we analyze this data under the assumption that there is no drastic difference in population demographics between 2010 and 2016. The census data includes 7 variables: the police department and the city it's located in, as well as the city's Black, Asian, Hispanic, White, and overall total population in 2013. 
-
-
-## II. Methods
 
 ### Data Processing 
 
@@ -83,36 +80,36 @@ knitr::include_graphics("figures/multeda1.png")
 knitr::include_graphics("figures/multeda2.png")
 ```
 
-|       Additionally, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among all shootings with only one victim, it appears in \emph{Figure 2} that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. This means that we should proceed with caution when evaluating the effects of each of these races on whether a shooting is fatal or non-fatal.
+|       Additionally, there appears to be 1,906 incidents in the final dataset in which there was only one victim, and 148 with multiple victims. Among all shootings with only one victim, it appears in \emph{Figure 2} that the victim is more often Black than some other race. However, it seems that Black victims and most victims of the other race types are more likely to be shot non-fatally than fatally, whereas White victims seem more likely to be shot fatally. Finally, it is important to note that the numbers of victims that are of race types Asian and Other are relatively small. Because of this, we will combine Asian and Other race types into one single race category called "Other" for both officers and victims for our models.
 
 |       Similarly, as seen in \emph{Figure 3}, Black victims make up the highest proportion of victims in shootings with multiple victims. However, in these shootings, all race types are more likely to be shot non-fatally than fatally, with Latinos having the highest proportion of being shot fatally out of all other race types. Additionally, it should be noted that there are no victims with race type "Other" in shootings where there are multiple victims. 
 
-***Since A and O are so little in the single victims dataset, I will combine them.
+## III. Methods
 
+|        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are random effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). Additionally, I will be using random effects to control for correlation within cities. 
 
-### Model 
-
-|        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are fixed effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). From the Exploratory Data Analysis section, it is evident that victim race plays a significant role in whether the shooting is fatal or not. Thus, for both models, I started with a simple logistic regression model using only victim race as a predictor. From there, I began adding the other predictors that I wanted to explore one at a time and performed likelihood ratio tests with each new model iteration to make sure that the added variable improves the previous model. This means that the likelihood ratio test's p-value is less than 0.05. 
+|        To create these two models, I first performed backwards selection using simple logistic regression models on all relevant predictors in order to get a sense of which predictors are most statistically significant in prediction shooting fatality. Then, I added potential interactions that I wanted to explore one at a time and performed likelihood ratio tests with each new model iteration to check if the added interaction improved the previous model. Whether an interaction was statistically significant or not was determined by whether the likelihood ratio test's p-value was less than 0.05. Finally, I put these variables obtained from backwards selection into a random effects linear regression model with city as the random intercept and evaluated the fit of this model using cross validation, which I will describe in more detail in the Results section. From there, I tweaked the model by experimenting with additional predictors, interactions, and random effects between city and other predictors in order to obtain the best fitting model.
 
 |        The final model for single-victim shootings is written out below:
 ```{r, eval = F}
-fit9 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace + SubjectArmed, family = binomial, data=single_victims)
+rand_fit4 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + unarmed + (1 + gun | city) + SubjectGender, data = single_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 ```
 
 \begin{center}
 $$
-log(\frac{p_i}{(1-p_i)}) = \beta_0 + \sum_{j=1}^{4} \beta_{j} I(SubjectRace_i = SubjectRace[j]) +
+log(\frac{p_i}{(1-p_i)}) = \beta_0 + \beta_1\ SubjectRace_i + \beta_2\ OfficerBlack_i + \beta_3\ OfficerWhite_i + \beta_4\ MultipleOfficers_i
 $$
 $$
-\sum_{j=5}^{8}  \beta_{j} black\_officer\_present_i * I(SubjectRace_i = SubjectRace[j-4]) + \beta_9\ (\frac{black_i}{city\_pop_i}) +
++ \beta_{5j}\ VictimWithGun_{ij} + \beta_6\ VictimWithOther_i + \beta_7\ VictimWithReplica_i + \beta_8\ VictimWithKnife_i + \beta_9\ VictimUnarmed_i + b_i
 $$
 $$
-\beta_{10}\ black\_officer\_present_i + \beta_{11}\ white\_officer\_present_i + \beta_{12}\ latino\_officer\_present_i + \beta_{13} \ victim\_armed\_gun_i
+b_i \sim N(0, \sigma_b^2)
 $$
 $$
-SubjectRace = [\text{Black, Latino, Other, White}]
+SubjectRace = \text{{White*, Black, Latino, Other}}
 $$
 \end{center}
+In the model above, it is important to note that the predictor for whether the victim was carrying a gun is varied by city. This means that there is both a random intercept for city as well as a random slope for whether the victim was carrying a gun.
 
 |        The final model for multiple-victim shootings is written out below:
 \begin{center}
@@ -127,13 +124,26 @@ $$
 $$
 \end{center}
 
+## IV. Results
 
-## III. Preliminary Results
+### Single Victims Model
 
+```{r random effects 4}
+rand_fit4 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + unarmed + (1 + gun | city) + SubjectGender, data = single_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+summary(rand_fit4)
+coef(rand_fit4)
+fixef(rand_fit4)
+ranef(rand_fit4)
+```
+
+### Multiple Victims Model
+
+### Model Validation and Diagnostics
+
+### Sensitivity Analysis
 TO DO: 
 - fix my models -- backward selection 
 - random effects by city, maybe race | city 
-- combine other with asian? 
 - more interactions 
 
 ### Analysis Plan
@@ -142,12 +152,15 @@ TO DO:
 
 |        For sensitivity analysis, I plan to perform cross-validation on the dataset by holding out 10% of the data to use as a test set and training my models on the other 90% of the data as a way to assess prediction accuracy. For model diagnostics, I will plot binned residual plots and ROC curves to assess how well my models fit the data.
 
+
+## V. Discussion and Conclusion
+
 ### Strengths and Limitations
 
 |        One strength of my analysis is that I am considering many variables as predictors, from individual level data to contextual predictors, such as state gun legislation. This allows me to thoroughly explore and determine whether the relationships between a wide range of potential predictors and police shooting fatality in the context of police brutality are significant in any types of shootings (single vs. multiple victims, for example). There are several limitations to this study. For example, the VICE News dataset spans over the years 2010 to 2016, and neither of my models will be exploring time series data whatsoever. Thus, the aspect of time may be playing some sort of effect on my response variable that I am not accurately capturing in my models. There are also several other confounding factors that have not been accounted for, such as how well one can shoot at baseline or what training they have received with regards to shooting. Additionally, when cleaning the data, there were several "Unknown" values in the fatality column. Unknown values were assumed to represent "No" in this study, although this may not necessarily be true, to allow for more straightforward cleaning of the data and not lose too many observations in the data. Finally, there were less than 200 cases in which there were multiple victims in my final dataset, which is a relatively small sample size. Thus, it may be necessary to take the results from the multiple-victim model with a grain of salt.
 
 
-## References 
+## VI. References 
 
 [1] McCann, Allison, et al. “Police Shoot Far More People than Anyone Realized, a VICE News Investigation Reveals.” VICE News, VICE News, 12 Dec. 2017, news.vice.com/en_us/article/xwvv3a/shot-by-cops. 
 
@@ -161,7 +174,7 @@ TO DO:
 
 [6] DeGue, Sarah et al. “Deaths Due to Use of Lethal Force by Law Enforcement: Findings From the National Violent Death Reporting System, 17 U.S. States, 2009-2012.” American journal of preventive medicine vol. 51,5 Suppl 3 (2016): S173-S187. doi:10.1016/j.amepre.2016.08.027
 
-## Appendix
+## VII. Appendix
 
 ```{r, figures-btw, out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset (left) and vs. Black Population Percentages in Cities in Dataset (right)"}
 par(mar = c(2, 2, .1, .1))

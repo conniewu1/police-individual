@@ -16,6 +16,9 @@ library(dplyr)
 library(tidyr)
 library(tidyverse)
 library(lmtest)
+library(lme4)
+library(caret)
+library(groupdata2) # fold()
 ```
 
 ```{r load-data}
@@ -38,39 +41,340 @@ mult_victims <- final_df %>%
   filter(NumberOfSubjects > 1)
 ```
 
+### Old Validation Code
+
 ```{r}
-fit1 <- glm(formula = fatal ~ SubjectRace, family = binomial, data=single_victims)
+crossvalidate <- function(data, k, model, dependent, random = FALSE){
+  # 'data' is the training set with the ".folds" column
+  # 'k' is the number of folds we have
+  # 'model' is a string describing a linear regression model formula
+  # 'dependent' is a string with the name of the score column we want to predict
+  # 'random' is a logical; do we have random effects in the model?
+  
+  # Initialize empty list for recording performances
+  performances <- c()
+  
+  # One iteration per fold
+  for (fold in 1:k){
+    
+    # Create training set for this iteration
+    # Subset all the datapoints where .folds does not match the current fold
+    training_set <- data[data$.folds != fold,]
+    
+    # Create test set for this iteration
+    # Subset all the datapoints where .folds matches the current fold
+    testing_set <- data[data$.folds == fold,]
+    
+    ## Train model
 
-fit2 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013), family = binomial, data=single_victims)
-lrtest(fit2, fit1)
-summary(fit2)
+    # If there is a random effect,
+    # use glmer() to train model
+    # else use glm()
 
-# Victim Gender doesn't appear to be significant
-fit3 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + SubjectGender, family = binomial, data=single_victims)
-lrtest(fit3, fit2)
+    if (isTRUE(random)){
+      # Train linear mixed effects model on training set
+      m <- glmer(model, training_set, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+    } else {
+      # Train linear model on training set
+      m <- glm(model, training_set, family = "binomial", control=glm.control(maxit=50))
+    }
 
-fit4 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob, family = binomial, data=single_victims)
-lrtest(fit3, fit4)
+    ## Test model
 
-fit5 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow, family = binomial, data=single_victims)
-lrtest(fit5, fit4)
+    # Predict the dependent variable in the testing_set with the trained model
+    predicted <- predict(m, testing_set, type="response", allow.new.levels = TRUE)
+    fit.convert <- ifelse(predicted < 0.5, 0, 1)
+    table(fit.convert, testing_set[[dependent]])
+    performances[fold] <- mean(fit.convert == testing_set[[dependent]])
+  }
 
-fit6 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol, family = binomial, data=single_victims)
-lrtest(fit5, fit6)
-
-fit7 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace, family = binomial, data=single_victims)
-lrtest(fit6, fit7)
-
-fit8 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace, family = binomial, data=single_victims)
-lrtest(fit8, fit7)
-
-fit9 <- glm(formula = fatal ~ SubjectRace + I(black/city_pop_2013) + ob + ow + ol + ow:SubjectRace + gun, family = binomial, data=single_victims)
-lrtest(fit8, fit9)
-summary(fit9)
+  return(performances)
+}
 ```
 
 ```{r}
-mult1 <- glm(formula = fatal ~ sb + sw + sl + I(black/city_pop_2013) + ob + ow + ol + ow:sb + gun, family = binomial, data=mult_victims)
-summary(mult1)
+getAccuracy <- function(v) {
+  if (length(v) == 4) {
+      return(((v[1] + v[4])/sum(v)) * 100)
+  }
+  if (length(v) == 2) {
+    return((v[1]/sum(v)) * 100)
+  }
+}
 ```
 
+## Single Victims 
+
+### Backwards Selection
+```{r backwards-selection}
+fullmodel <- glm(fatal ~ SubjectRace + SubjectGender + ob + ow + ol + oo + omale + ofem + omult + gun + weapon_other + replica + knife + unarmed + I(black/city_pop_2013) + I(black/white) + total_pr + deesc_train, family = binomial, data=single_victims)
+step(fullmodel, direction = "backward")
+```
+
+Backwards selection gives: glm(formula = fatal ~ SubjectRace + SubjectGender + ob + ow + 
+    omult + gun + knife + unarmed + I(black/city_pop_2013), family = binomial, 
+    data = single_victims)
+    
+```{r backwards-selection}
+fullmodel <- glm(fatal ~ SubjectRace + SubjectGender + ob + ow + ol + oo + omale + ofem + omult + gun + weapon_other + replica + knife + unarmed + I(black/city_pop_2013) + I(black/white) + total_pr + deesc_train + city, family = binomial, data=single_victims)
+step(fullmodel, direction = "backward")
+```
+
+When I put city in, it turns out to be in the backwards model too -- should probably do random effects with city. Formula: glm(formula = fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + city, family = binomial, data = single_victims)
+    
+### Trying the models
+
+```{r backwards-fit}
+fitback <- glm(formula = fatal ~ SubjectRace + SubjectGender + ob + ow + 
+    omult + gun + knife + unarmed + I(black/city_pop_2013), family = binomial, 
+    data = single_victims)
+summary(fitback)
+```
+
+```{r validate fitback}
+set.seed(1)
+Train <- createDataPartition(single_victims$fatal, p=0.9, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+ctrl <- trainControl(method = "repeatedcv", number = 5, savePredictions = TRUE)
+
+mod_fitback <- train(as.factor(fatal) ~ SubjectRace + SubjectGender + ob + ow + 
+    omult + gun + knife + unarmed + I(black/city_pop_2013),  data=single_victims, method="glm", family="binomial", trControl = ctrl, tuneLength = 5, control=glm.control(maxit=50)
+    )
+
+pred <- predict(mod_fitback, newdata=testing )
+confusionMatrix(data=pred, as.factor(testing$fatal))
+```
+
+```{r validate fitback again}
+set.seed(1)
+
+Train <- createDataPartition(single_victims$fatal, p=0.9, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+data <- fold(
+  training,
+  k = 5
+) %>%
+  arrange(.folds)
+
+m0 <- 'fatal ~ SubjectRace + SubjectGender + ob + ow + omult + gun + knife + unarmed + I(black/city_pop_2013)'
+p0 <- crossvalidate(data, k = 5, model = m0, dependent = 'fatal', random = FALSE)
+p0
+mean(p0)
+
+back2 <- glm(m0, training, family = "binomial")
+preds <- predict(rand_fit1, testing, type = "response")
+fit.convert <- ifelse(preds < 0.5, 0, 1)
+table(fit.convert, testing[['fatal']])
+mean(fit.convert == testing[['fatal']])
+```
+
+```{r fit with city}
+fitback1 <- glm(formula = fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + city, family = binomial, data = single_victims)
+summary(fitback1)
+
+back2 <- glm(formula = fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + city + city:SubjectRace, family = binomial, data = single_victims)
+lrtest(fitback1, back2)
+
+back3 <- glm(formula = fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + city + city:gun, family = binomial, data = single_victims)
+lrtest(fitback1, back3)
+```
+
+Interactions between city and race lead to better fit, makes it seem like I should vary race by city perhaps
+
+```{r validate fitback1}
+set.seed(1)
+Train <- createDataPartition(single_victims$fatal, p=0.9, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+ctrl <- trainControl(method = "repeatedcv", number = 5, savePredictions = TRUE)
+
+mod_fitback1 <- train(as.factor(fatal) ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + city,  data=single_victims, method="glm", family="binomial", trControl = ctrl, tuneLength = 5, control=glm.control(maxit=50)
+    )
+
+pred <- predict(mod_fitback1, newdata=testing )
+confusionMatrix(data=pred, as.factor(testing$fatal))
+```
+```{r validate back2}
+set.seed(1)
+Train <- createDataPartition(single_victims$fatal, p=0.9, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+ctrl <- trainControl(method = "repeatedcv", number = 5, savePredictions = TRUE)
+
+mod_back2 <- train(as.factor(fatal) ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + city + city:SubjectRace,  data=single_victims, method="glm", family="binomial", trControl = ctrl, tuneLength = 5, control=glm.control(maxit=50)
+    )
+
+pred <- predict(mod_back2, newdata=testing )
+confusionMatrix(data=pred, as.factor(testing$fatal))
+```
+
+```{r random-effects}
+rand_fit1 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + (1 | city), data = single_victims, family = "binomial", nAGQ=50)
+summary(rand_fit1)
+coef(rand_fit1)
+fixef(rand_fit1)
+ranef(rand_fit1)
+
+classDFrand_fit1 <- data.frame(response = single_victims$fatal, predicted = round(fitted(rand_fit1),0))
+rand_fit1pred <- xtabs(~ predicted + response, data = classDFrand_fit1)
+getAccuracy(rand_fit1pred)
+```
+
+```{r validate rand_fit1}
+set.seed(1)
+
+Train <- createDataPartition(single_victims$fatal, p=0.85, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+data <- fold(
+  training,
+  k = 5
+) %>%
+  arrange(.folds)
+
+m0 <- 'fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + unarmed + (1 | city)'
+p0 <- crossvalidate(data, k = 5, model = m0, dependent = 'fatal', random = TRUE)
+p0
+mean(p0)
+
+rand_fit1 <- glmer(m0, training, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+preds <- predict(rand_fit1, testing, type = "response")
+fit.convert <- ifelse(preds < 0.5, 0, 1)
+table(fit.convert, testing[['fatal']])
+mean(fit.convert == testing[['fatal']])
+```
+
+```{r vary subject race by city}
+rand_fit2 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + (SubjectRace | city), data = single_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+summary(rand_fit2)
+coef(rand_fit2)
+fixef(rand_fit2)
+ranef(rand_fit2)
+
+classDFrand_fit2 <- data.frame(response = single_victims$fatal, predicted = round(fitted(rand_fit2),0))
+rand_fit2pred <- xtabs(~ predicted + response, data = classDFrand_fit2)
+getAccuracy(rand_fit2pred)
+```
+
+```{r validate rand_fit2}
+set.seed(1)
+
+Train <- createDataPartition(single_victims$fatal, p=0.85, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+data <- fold(
+  training,
+  k = 5
+) %>%
+  arrange(.folds)
+
+m0 <- 'fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + unarmed + (SubjectRace | city)'
+p0 <- crossvalidate(data, k = 5, model = m0, dependent = 'fatal', random = TRUE)
+p0
+mean(p0)
+
+rand_fit2 <- glmer(m0, training, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+preds <- predict(rand_fit2, testing, type = "response")
+fit.convert <- ifelse(preds < 0.5, 0, 1)
+table(fit.convert, testing[['fatal']])
+mean(fit.convert == testing[['fatal']])
+```
+
+```{r vary subject race by city and make it vary intercept too}
+rand_fit3 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + 
+    replica + knife + unarmed + (1 + SubjectRace | city), data = single_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+summary(rand_fit3)
+coef(rand_fit3)
+fixef(rand_fit3)
+ranef(rand_fit3)
+
+classDFrand_fit3 <- data.frame(response = single_victims$fatal, predicted = round(fitted(rand_fit3),0))
+rand_fit3pred <- xtabs(~ predicted + response, data = classDFrand_fit3)
+getAccuracy(rand_fit3pred)
+```
+
+```{r validate rand_fit3}
+set.seed(1)
+
+Train <- createDataPartition(single_victims$fatal, p=0.85, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+data <- fold(
+  training,
+  k = 5
+) %>%
+  arrange(.folds)
+
+m0 <- 'fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + unarmed + (1 + SubjectRace | city)'
+p0 <- crossvalidate(data, k = 5, model = m0, dependent = 'fatal', random = TRUE)
+p0
+mean(p0)
+
+rand_fit3 <- glmer(m0, training, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+preds <- predict(rand_fit3, testing, type = "response")
+fit.convert <- ifelse(preds < 0.5, 0, 1)
+table(fit.convert, testing[['fatal']])
+mean(fit.convert == testing[['fatal']])
+```
+
+```{r random effects 4}
+rand_fit4 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + unarmed + (1 + gun | city) + SubjectGender, data = single_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+summary(rand_fit4)
+coef(rand_fit4)
+fixef(rand_fit4)
+ranef(rand_fit4)
+
+classDFrand_fit4 <- data.frame(response = single_victims$fatal, predicted = round(fitted(rand_fit4),0))
+rand_fit4pred <- xtabs(~ predicted + response, data = classDFrand_fit4)
+getAccuracy(rand_fit4pred)
+```
+
+```{r validate rand_fit4}
+set.seed(1)
+
+Train <- createDataPartition(single_victims$fatal, p=0.85, list=FALSE)
+training <- single_victims[ Train, ]
+testing <- single_victims[ -Train, ]
+
+data <- fold(
+  training,
+  k = 5
+) %>%
+  arrange(.folds)
+
+m0 <- 'fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + unarmed + (1 + gun | city) + SubjectGender'
+p0 <- crossvalidate(data, k = 5, model = m0, dependent = 'fatal', random = TRUE)
+p0
+mean(p0)
+
+rand_fit3 <- glmer(m0, training, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+preds <- predict(rand_fit3, testing, type = "response")
+fit.convert <- ifelse(preds < 0.5, 0, 1)
+table(fit.convert, testing[['fatal']])
+mean(fit.convert == testing[['fatal']])
+```
+
+Single victims final model!!
+
+## Multiple Victims
+```{r backwards-selection}
+fullmodel <- glm(fatal ~ sb  + sw + sl + so + sfem + smale + weapon_other + replica + knife + ob + ow + ol + oo + omale + ofem + omult + gun + unarmed + unknown_weapon +  I(black/city_pop_2013) + I(black/white) + total_pr + deesc_train, family = binomial, data=mult_victims)
+step(fullmodel, direction = "backward")
+```
