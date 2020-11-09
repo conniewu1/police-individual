@@ -102,13 +102,13 @@ getAccuracy <- function(v) {
 }
 ```
 
-## I. Introduction
+# I. Introduction
 
 |        On May 25, 2020, George Floyd was publicly suffocated to death by police officers in Minneapolis, Minnesota. This, along with the murder of Breonna Taylor by Louisville police, incited waves of protests against police brutality across the United States and increased the spread of Black Lives Matter content on social media. The recent boost in attention to the Black Lives Matter movement has once again brought to light the issue of racism in America and its link to police brutality, and more specifically, police use of deadly force. Several studies have already found that race does play a part in who is targeted and killed in police shootings. For example, in a recent VICE News investigation about police shootings, it was found that “Black people were shot more often and at higher rates than people of any other race.” [1] Additionally, Edwards et. al performed a study regarding the effects of age, race-ethnicity, and sex on the risk of being killed by lethal force by law enforcement and similarly found that "Black men are about 2.5 times more likely to be killed by police over the life course than are white men" while "Black women are about 1.4 times more likely to be killed by police than are white women." [2] However, even with these studies and their disturbing conclusions, a poll done by AP-NORC in June 2020 found that still 39% of Americans think that police are not more likely to use lethal force against a Black person than a White person. [3] Although this has decreased from an overwhelming 51% in June 2015, there is still a great deal of research that needs to be done in this area to provide more statistical evidence backing the relationship between racism and police use of deadly force. 
 
 |        As a result, I have decided to build off of VICE News’ study and investigate data on police shootings further to understand the roles that the race of both victim and officer, as well as other factors such as whether they are carrying a weapon and the total number of victims in the crime, play in fatal versus non-fatal police shootings. Additionally, to account for the varying locations of the homicides, I will be using a dataset found on Kaggle detailing the gun provisions that are upheld by each state see how gun legislation affects lethal vs. non-lethal shootings. I will also add a predictor indicating whether the state in which the homicide occurred requires de-escalation training for police officers. Finally, I will explore how the race demographics of each location relates to police use of deadly force. This will allow me to better understand how racism has manifested itself in America’s police system and determine whether current attempts to prevent police use of lethal force are effective or not.
 
-## II. Data
+# II. Data
 
 |        As a basis for this study, I will be using the same dataset that VICE News used. This dataset contains data on officer-involved shootings from 47 of the largest local police departments in America, and more specifically, “information on 4,117 incidents and 4,400 subjects [(victims)] over seven years.” [1] VICE News provides 34 variables in the dataset, including dates ranging from January 2010 to September 2016, 47 unique cities, subject race, subject gender, office race, officer gender, the type of weapon the subject was carrying, and whether the shooting was fatal or not. Race was broken up into 6 categories: White (non-Hispanic) (represented as W), Black (non-Hispanic) (B), Asian (A), Latino (L), Other (O), and Unknown (U). Gender was broken up into 3 categories: Male (M), Female (F), and Unknown (U). Weapon type was broken up into 5 values: "gun", "knife", "replica", "other", and "unknown". Additionally, there were cases in which multiple victims and/or multiple officers were present in the shooting. Each of these scenarios was still represented within one row of the dataset, but semi-colons were present in the respective victim and officer columns, separating each individual's information from each other.
 
@@ -116,7 +116,7 @@ getAccuracy <- function(v) {
 
 |       Finally, to examine city demographics as a predictor, I will be using population data from the 2013 American Community Survey that VICE News had already cleaned and standardized to the shootings dataset, meaning the city names can be matched up between the two datasets. VICE News most likely provided only 2013 census data because it is the average year of all the years represented in the shootings dataset. Furthermore, using census data only from 2013 requires that we analyze this data under the assumption that there is no drastic difference in population demographics between 2010 and 2016. The census data includes 7 variables: the police department and the city it's located in, as well as the city's Black, Asian, Hispanic, White, and overall total population in 2013. 
 
-### Data Processing 
+## Data Processing 
 
 |        Although the VICE News dataset was already relatively clean with regards to the victim's data, there was still quite a bit of cleaning that needed to be done for the race and gender data of the officers. To clean these columns, I replaced all values that were not "W", "B", "A", "O", or "U" in the race column with the most informed guess that I could make about what the values represented. For example, "A/PI" values were taken to represent Asian/Pacific Islander and thus were replaced with "A", and "A/W" or other values with a "/" in them were typically taken to represent multi-racial individuals and as a result were replaced with "O." Similar procedures were carried out in the gender column for officers for values that were not "M", "F", or "U".
 
@@ -126,7 +126,7 @@ getAccuracy <- function(v) {
 
 |        After merging the three datasets, the final dataset consists of 2,054 observations.
 
-### Exploratory Data Analysis
+## Exploratory Data Analysis
 
 ```{r, figures-city1, fig.show="hold", out.width="50%"}
 par(mar = c(2, 2, .1, .1))
@@ -168,7 +168,7 @@ knitr::include_graphics("figures/multeda2.png")
 
 |       Similarly, as seen in \emph{Figure 3}, Black victims make up the highest proportion of victims in shootings with multiple victims. However, in these shootings, all race types are more likely to be shot non-fatally than fatally, with Latinos having the highest proportion of being shot fatally out of all other race types. Additionally, it should be noted that there are no victims with race type "Other" in shootings where there are multiple victims. 
 
-## III. Methods
+# III. Methods
 
 |        Because I want to explore the relationship between the number of victims in a police shooting affects and whether the shooting is fatal or not, I decided to create two separate models: one for shootings with only one victim, and one for shootings with multiple victims. Both models are random effect logistic regression models because the range that the response variable can take in logistic regression is the most reasonable given that I am predicting whether a victim is shot fatally or not (labeled 1 and 0, respectively). Additionally, I will be using random effects to control for correlation within cities. 
 
@@ -201,7 +201,7 @@ $$
 |        The final model for multiple-victim shootings is written out below (where $p_i$ represents the probability of getting fatally shot for shooting $i$):
 
 ```{r mult-fit, eval=F}
-rand_fitm <- glmer(fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + I(black/white) + (1 + sb + sl | city), data = mult_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+rand_fitm <- glmer(fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + (1 + sb + sl | city), data = mult_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 ```
 \begin{center}
 $$
@@ -211,55 +211,63 @@ $$
 + \beta_4\ OfficerBlack_i + \beta_5\ OfficerLatino_i + \beta_6\ MultipleOfficers_i + \beta_7\ VictimWithGun_i
 $$
 $$
-\beta_8\ VictimWithOther_i + \beta_9\ VictimWithReplica_i + \beta_{10}\ VictimWithKnife_i + \beta_{11}\ (\frac{black_i}{white_i}) + b_i
+\beta_8\ VictimWithOther_i + \beta_9\ VictimWithReplica_i + \beta_{10}\ VictimWithKnife_i + b_i
 $$
 $$
 b_i \sim N(0, \sigma_b^2)
 $$
 \end{center}
-|        For multiple victims, the best fitting model was the one that used city as a random intercept and had random slopes for whether a Black victim was present and whether a Latino victim was present in the shootings in each of these cities. It is important to note that none of the legislative predictors were useful in predicting the odds of someone being fatally shot in police shootings in either model. Additionally, $\frac{black_i}{white_i}$ refers to the proportion of black to white people in a city. This proved to be useful in increasing the predictive accuracy of the model.
+|        For multiple victims, the best fitting model was the one that used city as a random intercept and had random slopes for whether a Black victim was present and whether a Latino victim was present in the shootings in each of these cities. It is important to note that none of the legislative predictors were useful in predicting the odds of someone being fatally shot in police shootings in either model.
 
-## IV. Results
 
-### Single Victims Model
+# IV. Results
+
+## Single Victims Model
 
 ```{r single random effects}
 rand_fit2 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + (SubjectRace | city), data = single_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 kable(summary(rand_fit2)$coefficients)
 ```
 
-|        In this single victim model, the $\beta_0$ coefficient, which has a value of -0.57, represents the log odds of being fatally shot by police in a 'typical' scenario and city. 'Typical' can be defined as a shooting in which the victim is White and unarmed and there is only one officer present, who is neither Black nor White. Thus, $\beta_0 + b_i$, or the city-specific intercept, represents the log odds of being fatally shot for a 'typical' White, unarmed victim in city $i$ when there is only one officer present, who is neither Black nor White. The variabilities of the intercepts and slopes across different cities and different race groups within cities are all greater than 0, indicating that there is enough variation in the baseline odds of being shot fatally in different cities and different race groups within cities. From the fixed effect coefficients, we can see that generally, all other race types are less likely to be shot fatally than White 'typical' individuals. 
+|        In this single victim model, the $\beta_0$ coefficient, which has a value of -0.57, represents the log odds of being fatally shot by police in a 'typical' shooting. This can be defined as a shooting in which the victim is White and unarmed and there is only one officer present, who is neither Black nor White. Thus, $\beta_0 + b_i$, or the city-specific intercept, represents the log odds of being fatally shot for a White, unarmed victim in city $i$ when there is only one officer present, who is neither Black nor White. The variabilities of the intercepts and slopes across different cities and different race groups within cities are all greater than 0, indicating that there is enough variation in the baseline odds of being shot fatally in different cities and different race groups within cities. From the fixed effect coefficients, we can see that generally, all other race types are less likely to be shot fatally than White individuals in 'typical' shootings. 
 
-|        The `ranef` function allows us to further quantify the difference between the average predicted log odds of being fatally shot for the general population versus that of a specific city and subject race type, other predictors remaining unchanged. This can be found in the Appendix. From this table, we can see that the city with the highest baseline odds of being shot fatally is Albuquerque, whereas the city with the lowest baseline odds of being shot fatally is Chicago. For White people in Chicago, the predicted log odds of being shot fatally is 0.76 less than that of in a 'typical' scenario and city. However, for Black people in Chicago, the predicted log odds of being shot fatally is actually 0.28 higher than that of a 'typical' scenario and city. In contrast, for Latino people in Chicago, the predicted log odds of being shot fatally is 0.23 lower than that of a 'typical' scenario and city, and for people of other race types in Chicago, the predicted log odds of being shot fatally is 2.86 lower than that of a 'typical' scenario and city. We can conclude that in Chicago, Black people are disproportionately shot fatally in police shootings. In Albuquerque, the trend is almost opposite: for Black people, the log odds of being shot fatally is 0.43 less than that of a 'typical' scenario and city, whereas for White people, the log odds of being shot fatally is 0.67 more. Overall, we can conclude that city plays a large role in whether a race type is fatally shot in police shootings, although the general trend is that White people are most likely to be shot fatally than other race types.
+|        The `ranef` function allows us to further quantify the difference between the average predicted log odds of being fatally shot for the general population versus that of a specific city and subject race type, other predictors remaining unchanged. This can be found in the Appendix. From this table, we can see that the city with the highest baseline odds of being shot fatally is Albuquerque, whereas the city with the lowest baseline odds of being shot fatally is Chicago. For White people in Chicago, the predicted log odds of being shot fatally is 0.76 less than that in a 'typical' shooting. However, for Black people in Chicago, the predicted log odds of being shot fatally is actually 0.28 higher than that in a 'typical' shooting. In contrast, for Latino people in Chicago, the predicted log odds of being shot fatally is 0.23 lower than that in a 'typical' shooting, and for people of other race types in Chicago, the predicted log odds of being shot fatally is 2.86 lower than that in a 'typical' shooting. We can conclude that in Chicago, Black people are disproportionately shot fatally in police shootings with singular victims. In Albuquerque, the trend is almost opposite: for Black people, the log odds of being shot fatally is 0.43 less than that in a 'typical' shooting, whereas for White people, the log odds of being shot fatally is 0.67 more. Overall, we can conclude that city plays a large role in whether a race type is fatally shot in police shootings, although the general trend is that White individuals are most likely to be shot fatally than other race types.
 
-### Multiple Victims Model
+## Multiple Victims Model
 
 ```{r mult random effects}
-rand_fitm <- glmer(fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + I(black/white) + (1 + sb + sl | city), data = mult_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+rand_fitm <- glmer(fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + (1 + sb + sl | city), data = mult_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 kable(summary(rand_fitm)$coefficients)
-kable(ranef(rand_fitm))
 ```
 
-|        In this multiple victims model, the $\beta_0$ coefficient, which has a value of -1.77, represents the log odds of being fatally shot by police in a 'typical' scenario and city. 'Typical' can be defined as a shooting in which the victim is White and unarmed and there is only one officer present, who is neither Black nor Latino. Thus, $\beta_0 + b_i$, or the city-specific intercept, represents the log odds of being fatally shot for a 'typical' White, unarmed victim in city $i$ when there is only one officer present, who is neither Black nor White. The variabilities of the intercepts and slopes across different cities and different race groups within cities are all greater than 0, indicating that there is enough variation in the baseline odds of being shot fatally in different cities and different race groups within cities. From the fixed effect coefficients, we can see that generally, all other race types are less likely to be shot fatally than White 'typical' individuals. 
+|        In this multiple victims model, the $\beta_0$ coefficient, which has a value of -2.03, represents the log odds of being fatally shot by police in a 'typical' shooting. This can be defined as a shooting in which the victim is White and unarmed and there is only one officer present, who is neither Black nor Latino. Thus, $\beta_0 + b_i$, or the city-specific intercept, represents the log odds of being fatally shot for a White, unarmed victim in city $i$ when there is only one officer present, who is neither Black nor Latino. The variabilities of the intercepts and slopes across different cities and different race groups within cities are all greater than 0, indicating that there is enough variation in the baseline odds of being shot fatally in different cities and different race groups within cities. From the fixed effect coefficients, we can see that generally, the Black and Other race types are less likely to be shot fatally than White individuals in 'typical' shootings, while Latino individuals are slightly more likely to be shot fatally than these White individuals. 
 
-|        The `ranef` function also allows us to quantify the difference between the average predicted log odds of being fatally shot for the general population versus that of a specific city and subject race type, other predictors remaining unchanged. This can be found in the Appendix. From this table, we can see that the city with the highest baseline odds of being shot fatally is Albuquerque, whereas the city with the lowest baseline odds of being shot fatally is Chicago. For White people in Chicago, the predicted log odds of being shot fatally is 0.76 less than that of in a 'typical' scenario and city. However, for Black people in Chicago, the predicted log odds of being shot fatally is actually 0.28 higher than that of a 'typical' scenario and city. In contrast, for Latino people in Chicago, the predicted log odds of being shot fatally is 0.23 lower than that of a 'typical' scenario and city, and for people of other race types in Chicago, the predicted log odds of being shot fatally is 2.86 lower than that of a 'typical' scenario and city. We can conclude that in Chicago, Black people are disproportionately shot fatally in police shootings. In Albuquerque, the trend is almost opposite: for Black people, the log odds of being shot fatally is 0.43 less than that of a 'typical' scenario and city, whereas for White people, the log odds of being shot fatally is 0.67 more. Overall, we can conclude that city plays a large role in whether a race type is fatally shot in police shootings, although the general trend is that White people are most likely to be shot fatally than other race types.
+|        The output of the `ranef` function for this model can again be found in the Appendix. From this table, we can see that the city with the highest baseline odds of being shot fatally is Tucson, whereas the city with the lowest baseline odds of being shot fatally is again Chicago. For non-Black and non-Latino people in Chicago, the predicted log odds of being shot fatally is 1.04 less than that in a 'typical' shooting. However, for Black people in Chicago, the predicted log odds of being shot fatally is 2.23 higher than that in a 'typical' shooting. In contrast, for Latino people in Chicago, the predicted log odds of being shot fatally is 0.70 higher than that in a 'typical' shooting but still lower than that for Black people. We can conclude that in Chicago, Black people are disproportionately shot fatally in police shootings with multiple victims. In Tucson, the trend is almost opposite: for Black people, the log odds of being shot fatally is 1.37 less than that in a 'typical' shooting, whereas for non-Black and non-Latino people, the log odds of being shot fatally is 0.64 more. Overall, we can conclude that city plays a large role in whether a race type is fatally shot in police shootings with multiple victims, although the general trend is that Latino individuals are most likely to be shot fatally than other race types.
 
-### Differences Between Single and Multiple Victims
+## Differences Between Single and Multiple Victim Shootings
 
-### Model Validation and Diagnostics
+|        In both types of shooting, it was extremely important to capture correlations within cities, since there proved to be significant variations in trends between different cities. Additionally, it appears that most of the predictors remained the same between the two models, the only difference being that the presence of a Latino officer was statistically significant in multiple-victim shootings, whereas the presence of a White officer was statistically significant in single-victim shootings. Unfortunately, I was unable to add a random slope for Other race type individuals in the multiple-victim shootings because it forced the intercept not to be random anymore. Thus, I was unable to interpret the multiple-victim shootings coefficients in terms of White vs. other race types of individuals.
 
-|        As I mentioned earlier, I performed 5-fold cross-validation on my models to assess model accuracy and fit. I chose to use 5 folds and 85% of the data because this is commonly used in practice, but I tried it with 90% of the data as well just to verify that my cross-validation technique was not biased for the percentage of the full data allocated for the training set. I used the `groupdata2` R package to partition our data set so that the training set contained 85% of the data from the full dataset, and then I ran 5-fold cross-validation on this training set before predicting on the test set. When assessing the performance of different models, we considered a higher average cross-validation and test set prediction accuracy to be indicative of a better model. For the single victims model, I achieved an average 5-fold cross-validation prediction accuracy of 0.66 and a test set prediction accuracy of 0.70. For the multiple victims model, I achieved an average 5-fold cross-validation prediction accuracy of 0.61, and a test set prediction accuracy of 0.63.
+|        Some trends that remained constant between the types of shootings were that having multiple officers there increased the log odds of the shooting being fatal, whereas having a Black officer present decreased the log odds of the shooting being fatal. Additionally, the victim having a knife seemed to lead to the largest log odds of the shooting being fatal out of all types of weapons. Finally, many trends within cities remained the same among both types of shootings, one prominent example being Chicago, in which Black individuals are disproportionately shot fatally. One trend that changed between the two types of shootings was that White individuals were most likely to be shot fatally than other race types in single-victim shootings, whereas Latino individuals were most likely to be shot fatally in multiple-victim shootings. 
 
-### Sensitivity Analysis
+## Model Validation and Diagnostics
+
+|        As I mentioned earlier, I performed 5-fold cross-validation on my models to assess model accuracy and fit. I chose to use 5 folds and 85% of the data because this is commonly used in practice, but I tried it with 90% of the data as well just to verify that my cross-validation technique was not biased for the percentage of the full data allocated for the training set. I used the `groupdata2` R package to partition our data set so that the training set contained 85% of the data from the full dataset, and then I ran 5-fold cross-validation on this training set before predicting on the test set. When assessing the performance of different models, we considered a higher average cross-validation and test set prediction accuracy to be indicative of a better model. For the single victims model, I achieved an average 5-fold cross-validation prediction accuracy of 0.66 and a test set prediction accuracy of 0.70. For the multiple victims model, I achieved an average 5-fold cross-validation prediction accuracy of 0.63, and a test set prediction accuracy of 0.40. This test set prediction accuracy was relatively low, and although adding $\frac{black_i}{white_i}$ into the model significantly increasing the predictive accuracy of the model, I decided not to include it as a predictor because I suspected it was being used as a sort of index to identify the city that the shooting occurred in, which led to such a large boost in test set prediction accuracy.
+
+|        I will use a binned residual plot and QQ-plot in the next submission for model diagnostics.
+
+## Sensitivity Analysis
+
+|        For sensitivity analysis, I plan to test my assumptions about my imputed values, especially in the `fatal` column. Instead of assuming 'U' means 'N', I will instead assume that it means 'Y' and thus will be filtering out less columns as a result. I will incorporate this analysis into my next submission.
+
+# V. Discussion and Conclusion
+
+|        Overall, it appears that the most of the statistically significant predictors in single-victim vs. multiple-victim shootings overlap, meaning there is not a huge difference in these two types of shootings. Furthermore, the general trends among both types of shootings seem to be pretty similar, with the most important trend that changed among the two being that White individuals were most likely to be shot fatally than other race types in single-victim shootings, whereas Latino individuals were most likely to be shot fatally in multiple-victim shootings. Finally, it appears that legislative predictors are not significant in predicting whether a shooting will be fatal or not, whereas city, number of officers, officer race, victim weapon-type, and subject race are statistically significant. Surprisingly, White people generally have one of the highest odds ratios of being fatally shot in both types of police shootings, although this trend differs by city.
+
+|        One strength of my analysis is that I am considering many variables as predictors, from individual level data to contextual predictors, such as state gun legislation. This allows me to thoroughly explore and determine whether the relationships between a wide range of potential predictors and police shooting fatality in the context of police brutality are significant in any types of shootings (single vs. multiple victims, for example). There are several limitations to this study. For example, the VICE News dataset spans over the years 2010 to 2016, and neither of my models will be exploring time series data whatsoever. Thus, the aspect of time may be playing some sort of effect on my response variable that I am not accurately capturing in my models. There are also several other confounding factors that have not been accounted for, such as how well one can shoot at baseline or what training they have received with regards to shooting. Additionally, when cleaning the data, there were several "Unknown" values in the fatality column. Unknown values were assumed to represent "No" in this study, although this may not necessarily be true, to allow for more straightforward cleaning of the data and not lose too many observations in the data. Finally, there were less than 200 cases in which there were multiple victims in my final dataset, which is a relatively small sample size. Thus, it may be necessary to take the results from the multiple-victim model with a grain of salt, especially since the test set predictive accuracy was so low.
 
 
-## V. Discussion and Conclusion
-
-|        Overall, 
-|        One strength of my analysis is that I am considering many variables as predictors, from individual level data to contextual predictors, such as state gun legislation. This allows me to thoroughly explore and determine whether the relationships between a wide range of potential predictors and police shooting fatality in the context of police brutality are significant in any types of shootings (single vs. multiple victims, for example). There are several limitations to this study. For example, the VICE News dataset spans over the years 2010 to 2016, and neither of my models will be exploring time series data whatsoever. Thus, the aspect of time may be playing some sort of effect on my response variable that I am not accurately capturing in my models. There are also several other confounding factors that have not been accounted for, such as how well one can shoot at baseline or what training they have received with regards to shooting. Additionally, when cleaning the data, there were several "Unknown" values in the fatality column. Unknown values were assumed to represent "No" in this study, although this may not necessarily be true, to allow for more straightforward cleaning of the data and not lose too many observations in the data. Finally, there were less than 200 cases in which there were multiple victims in my final dataset, which is a relatively small sample size. Thus, it may be necessary to take the results from the multiple-victim model with a grain of salt.
-
-
-## VI. References 
+# VI. References 
 
 [1] McCann, Allison, et al. “Police Shoot Far More People than Anyone Realized, a VICE News Investigation Reveals.” VICE News, VICE News, 12 Dec. 2017, news.vice.com/en_us/article/xwvv3a/shot-by-cops. 
 
@@ -273,7 +281,7 @@ kable(ranef(rand_fitm))
 
 [6] DeGue, Sarah et al. “Deaths Due to Use of Lethal Force by Law Enforcement: Findings From the National Violent Death Reporting System, 17 U.S. States, 2009-2012.” American journal of preventive medicine vol. 51,5 Suppl 3 (2016): S173-S187. doi:10.1016/j.amepre.2016.08.027
 
-## VII. Appendix
+# VII. Appendix
 
 ```{r, figures-btw, out.width="50%", fig.cap="Proportion of Fatal Shootings vs. Black to White Ratios in Cities in Dataset (left) and vs. Black Population Percentages in Cities in Dataset (right)"}
 par(mar = c(2, 2, .1, .1))
@@ -295,15 +303,13 @@ mult_victims <- final_df %>%
   filter(NumberOfSubjects > 1)
 ```
 
-#### Single-Victim Shooting
+### Single-Victim Shooting
 ```{r single fit}
-rand_fit2 <- glmer(fatal ~ SubjectRace + ob + ow + omult + gun + weapon_other + replica + knife + (SubjectRace | city), data = single_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 kable(ranef(rand_fit2), caption = "Random Effects Coefficients for Single-Victim Shootings")
 ```
 
-#### Multiple-Victim Shooting
+### Multiple-Victim Shooting
 ```{r mult fit}
-rand_fitm <- glmer(fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + I(black/white) + (1 + sb + sl | city), data = mult_victims, family = "binomial", control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 kable(ranef(rand_fitm), caption ="Random Effects Coefficients for Multiple-Victim Shootings")
 ```
 ```{r validate rand_fit2}
@@ -319,7 +325,7 @@ data <- fold(
 ) %>%
   arrange(.folds)
 
-m0 <- 'fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + I(black/white) + (1 + sb + sl | city)'
+m0 <- 'fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + (1 + sb + sl | city)'
 p0 <- crossvalidate(data, k = 5, model = m0, dependent = 'fatal', random = TRUE)
 paste0("Average cross-validation prediction accuracy: ", mean(p0))
 
@@ -330,5 +336,3 @@ kable(table(fit.convert, testing[['fatal']]))
 m <- mean(fit.convert == testing[['fatal']])
 paste0("Test set prediction accuracy: ", m)
 ```
-
-

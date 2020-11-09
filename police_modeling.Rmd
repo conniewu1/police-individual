@@ -402,7 +402,7 @@ data <- fold(
 ) %>%
   arrange(.folds)
 
-m0 <- 'fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + I(black/white) + (1 + sb + sl | city)'
+m0 <- 'fatal ~ sb + sl + so + ob + ol + omult + gun + knife + weapon_other + replica + (1 + sb + sl | city)'
 p0 <- crossvalidate(data, k = 5, model = m0, dependent = 'fatal', random = TRUE)
 p0
 mean(p0)
